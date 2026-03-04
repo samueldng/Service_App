@@ -250,7 +250,7 @@ export default function EquipmentPage() {
                                 <button className="btn btn-ghost btn-icon" onClick={() => setViewing(null)}><X size={20} /></button>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 'var(--space-6)', marginTop: 'var(--space-4)' }}>
+                            <div className="details-grid">
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ background: 'white', padding: 'var(--space-4)', borderRadius: 'var(--radius-xl)', display: 'inline-block', marginBottom: 'var(--space-4)' }}>
                                         <QRCodeSVG value={getUrl(viewing.qrCodeUid)} size={150} />

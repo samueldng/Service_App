@@ -327,6 +327,13 @@
     gap: var(--space-4);
 }
 
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: var(--space-6);
+    margin-top: var(--space-4);
+}
+
 .modal__actions {
     display: flex;
     justify-content: flex-end;
@@ -461,7 +468,8 @@
         padding: var(--space-2) !important;
     }
 
-    .form-grid {
+    .form-grid,
+    .details-grid {
         grid-template-columns: 1fr;
     }
 
