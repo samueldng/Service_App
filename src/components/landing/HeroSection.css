@@ -134,17 +134,45 @@
 }
 
 @media (max-width: 768px) {
+    .hero {
+        padding-top: var(--space-24);
+        padding-bottom: var(--space-16);
+        min-height: auto;
+    }
+
+    .hero__content {
+        padding: var(--space-4);
+        margin-top: var(--space-8);
+    }
+
+    .hero__badge {
+        margin-bottom: var(--space-6);
+        font-size: var(--text-xs);
+    }
+
     .hero__title {
         font-size: var(--text-4xl);
+        margin-bottom: var(--space-4);
+    }
+
+    .hero__subtitle {
+        font-size: var(--text-base);
+        margin-bottom: var(--space-8);
     }
 
     .hero__actions {
         flex-direction: column;
+        width: 100%;
+        margin-bottom: var(--space-10);
+    }
+
+    .hero__actions .btn {
+        width: 100%;
     }
 
     .hero__stats {
         flex-direction: column;
-        gap: var(--space-4);
+        gap: var(--space-6);
     }
 
     .hero__stat-divider {
