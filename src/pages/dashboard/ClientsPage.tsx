@@ -4,7 +4,6 @@ import { Plus, Search, Edit2, Trash2, X, Building, User, ExternalLink, ListCheck
 import { useNavigate } from 'react-router-dom';
 import { clientsApi } from '../../services/api';
 import type { Client } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
@@ -19,7 +18,7 @@ export default function ClientsPage() {
         alert('Link do Portal copiado!'); // Simple feedback
     };
 
-    useEffect(() => { clientsApi.getAll().then(setClients); }, []);
+    useEffect(() => { clientsApi.getAll().then(setClients).catch(console.error); }, []);
 
     const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.document.includes(search));
 
@@ -36,15 +35,18 @@ export default function ClientsPage() {
     };
 
     const handleSave = async () => {
-        if (editing) {
-            const updated = await clientsApi.update(editing.id, { ...form });
-            setClients(prev => prev.map(c => c.id === editing.id ? updated : c));
-        } else {
-            const newClient: Client = { id: `cli-${uuidv4().slice(0, 8)}`, orgId: 'org-001', ...form, createdAt: new Date().toISOString().split('T')[0] };
-            await clientsApi.create(newClient);
-            setClients(prev => [...prev, newClient]);
+        try {
+            if (editing) {
+                const updated = await clientsApi.update(editing.id, { ...form });
+                setClients(prev => prev.map(c => c.id === editing.id ? updated : c));
+            } else {
+                const newClient = await clientsApi.create(form);
+                setClients(prev => [...prev, newClient]);
+            }
+            setShowModal(false);
+        } catch (error: any) {
+            alert('Erro ao salvar cliente: ' + error.message);
         }
-        setShowModal(false);
     };
 
     const handleDelete = async (id: string) => {

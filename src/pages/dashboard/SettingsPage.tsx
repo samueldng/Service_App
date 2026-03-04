@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Palette, CreditCard, Save, CheckCircle2, AlertTriangle, Building, Camera } from 'lucide-react';
-import { mockOrganization } from '../../data/mockData';
+import { organizationsApi } from '../../services/api';
 import type { Organization } from '../../types';
 
 export default function SettingsPage() {
@@ -10,23 +10,30 @@ export default function SettingsPage() {
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
-        // In a real app this would fetch from an API
-        setOrg(mockOrganization);
+        organizationsApi.get()
+            .then(data => { if (data) setOrg(data); })
+            .catch(err => console.error('Failed to load organization:', err));
     }, []);
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!org) return;
         setSaving(true);
-        // Simulate API call
-        setTimeout(() => {
-            setSaving(false);
+        try {
+            const updated = await organizationsApi.update(org.id, org);
+            setOrg(updated);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
 
             // Apply theme dynamically for preview
-            if (org?.brandColor) {
-                document.documentElement.style.setProperty('--color-primary', org.brandColor);
+            if (updated?.brandColor) {
+                document.documentElement.style.setProperty('--color-primary', updated.brandColor);
+                document.documentElement.style.setProperty('--color-accent-primary', updated.brandColor);
             }
-        }, 1000);
+        } catch (error: any) {
+            alert('Erro ao salvar: ' + error.message);
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (!org) return null;

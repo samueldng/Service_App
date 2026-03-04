@@ -115,6 +115,10 @@ CREATE POLICY "Admins can update their own organization"
 ON organizations FOR UPDATE USING (id = public.auth_org_id() AND (SELECT role FROM public.users WHERE id = auth.uid()) = 'admin');
 
 -- --- Users Policies ---
+-- Users can always view their own profile (even before org assignment)
+CREATE POLICY "Users can view own profile"
+ON public.users FOR SELECT USING (id = auth.uid());
+
 -- Users can view other users in their same organization
 CREATE POLICY "Users can view org teammates" 
 ON public.users FOR SELECT USING (org_id = public.auth_org_id());
