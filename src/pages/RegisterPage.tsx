@@ -20,10 +20,11 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await authApi.login(formData.email, formData.password);
+            await authApi.register(formData.email, formData.password, formData.name, formData.company);
+            // Supabase auth auto-logs in the session after a successful register
             navigate('/dashboard');
-        } catch {
-            alert('Erro ao criar conta');
+        } catch (error: any) {
+            alert('Erro ao criar conta: ' + error.message);
         } finally {
             setLoading(false);
         }

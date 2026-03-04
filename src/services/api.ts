@@ -1,193 +1,198 @@
-import type { Client, Sector, Equipment, ServiceOrder } from '../types';
-import { mockClients, mockSectors, mockEquipments, mockServiceOrders } from '../data/mockData';
+import { supabase } from '../lib/supabase';
+import type { Organization, Client, Sector, Equipment, ServiceOrder, User } from '../types';
 
-const delay = (ms: number = 300) => new Promise(resolve => setTimeout(resolve, ms));
-
-const STORAGE_KEYS = {
-    CLIENTS: 'maintqr_clients',
-    SECTORS: 'maintqr_sectors',
-    EQUIPMENTS: 'maintqr_equipments',
-    SERVICE_ORDERS: 'maintqr_service_orders',
-    AUTH: 'maintqr_auth',
-};
-
-function getStore<T>(key: string, fallback: T[]): T[] {
-    const data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-    localStorage.setItem(key, JSON.stringify(fallback));
-    return fallback;
-}
-
-function setStore<T>(key: string, data: T[]) {
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-// ---- Auth ----
 export const authApi = {
-    login: async (email: string, _password: string) => {
-        await delay(500);
-        if (email) {
-            const user = { id: 'user-001', orgId: 'org-001', name: 'Carlos Mendes', email, role: 'admin' as const };
-            localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(user));
-            return user;
-        }
-        throw new Error('Credenciais inválidas');
+    login: async (email: string, password?: string) => {
+        const pass = password || 'password123'; // Fallback
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) throw error;
+        return data;
     },
-    logout: () => {
-        localStorage.removeItem(STORAGE_KEYS.AUTH);
+    register: async (email: string, password: string, name: string, company: string) => {
+        // Warning: This requires the org to be created via trigger or public insert policy in Supabase
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { full_name: name, company: company }
+            }
+        });
+        if (error) throw error;
+
+        // Auto-create Organization for this new user by calling the backend RPC
+        const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company });
+        if (rpcError) throw rpcError;
+
+        return data;
     },
-    getUser: () => {
-        const data = localStorage.getItem(STORAGE_KEYS.AUTH);
-        return data ? JSON.parse(data) : null;
+    logout: async () => {
+        await supabase.auth.signOut();
     },
+    getCurrentUser: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        // Fetch extended user profile
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        return profile as User;
+    }
 };
 
-// ---- Clients ----
+export const organizationsApi = {
+    get: async () => {
+        const { data, error } = await supabase.from('organizations').select('*').single();
+        if (error && error.code !== 'PGRST116') throw error; // Allow empty
+        return data as Organization;
+    },
+    update: async (id: string, updates: Partial<Organization>) => {
+        const { data, error } = await supabase.from('organizations').update(updates).eq('id', id).select().single();
+        if (error) throw error;
+        return data as Organization;
+    }
+};
+
 export const clientsApi = {
-    getAll: async (): Promise<Client[]> => {
-        await delay();
-        return getStore(STORAGE_KEYS.CLIENTS, mockClients);
+    getAll: async () => {
+        const { data, error } = await supabase.from('clients').select('*').order('name');
+        if (error) throw error;
+        return data as Client[];
     },
-    getById: async (id: string): Promise<Client | undefined> => {
-        await delay();
-        const clients = getStore(STORAGE_KEYS.CLIENTS, mockClients);
-        return clients.find(c => c.id === id);
+    create: async (client: Omit<Client, 'id' | 'orgId' | 'createdAt'>) => {
+        // orgId is injected via backend RLS ideally, or we fetch auth session here
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user?.id).single();
+
+        const { data, error } = await supabase.from('clients').insert([{ ...client, org_id: profile?.org_id }]).select().single();
+        if (error) throw error;
+        return data as Client;
     },
-    create: async (client: Client): Promise<Client> => {
-        await delay();
-        const clients = getStore(STORAGE_KEYS.CLIENTS, mockClients);
-        clients.push(client);
-        setStore(STORAGE_KEYS.CLIENTS, clients);
-        return client;
+    update: async (id: string, updates: Partial<Client>) => {
+        const { data, error } = await supabase.from('clients').update(updates).eq('id', id).select().single();
+        if (error) throw error;
+        return data as Client;
     },
-    update: async (id: string, updates: Partial<Client>): Promise<Client> => {
-        await delay();
-        const clients = getStore(STORAGE_KEYS.CLIENTS, mockClients);
-        const index = clients.findIndex(c => c.id === id);
-        if (index === -1) throw new Error('Client not found');
-        clients[index] = { ...clients[index], ...updates };
-        setStore(STORAGE_KEYS.CLIENTS, clients);
-        return clients[index];
-    },
-    delete: async (id: string): Promise<void> => {
-        await delay();
-        let clients = getStore(STORAGE_KEYS.CLIENTS, mockClients);
-        clients = clients.filter(c => c.id !== id);
-        setStore(STORAGE_KEYS.CLIENTS, clients);
-    },
+    delete: async (id: string) => {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) throw error;
+    }
 };
 
-// ---- Sectors ----
 export const sectorsApi = {
-    getAll: async (): Promise<Sector[]> => {
-        await delay();
-        return getStore(STORAGE_KEYS.SECTORS, mockSectors);
+    getAll: async () => {
+        const { data, error } = await supabase.from('sectors').select('*').order('name');
+        if (error) throw error;
+        return data as Sector[];
     },
-    getByClientId: async (clientId: string): Promise<Sector[]> => {
-        await delay();
-        const sectors = getStore(STORAGE_KEYS.SECTORS, mockSectors);
-        return sectors.filter(s => s.clientId === clientId);
+    create: async (sector: Omit<Sector, 'id' | 'createdAt'>) => {
+        // Map camelCase to snake_case for DB
+        const payload = { ...sector, client_id: sector.clientId };
+        // @ts-ignore - temporary to bypass TS due to type mismatch before full snake_case mapping
+        delete payload.clientId;
+
+        const { data, error } = await supabase.from('sectors').insert([payload]).select().single();
+        if (error) throw error;
+        return { ...data, clientId: data.client_id } as Sector;
     },
-    create: async (sector: Sector): Promise<Sector> => {
-        await delay();
-        const sectors = getStore(STORAGE_KEYS.SECTORS, mockSectors);
-        sectors.push(sector);
-        setStore(STORAGE_KEYS.SECTORS, sectors);
-        return sector;
-    },
-    update: async (id: string, updates: Partial<Sector>): Promise<Sector> => {
-        await delay();
-        const sectors = getStore(STORAGE_KEYS.SECTORS, mockSectors);
-        const index = sectors.findIndex(s => s.id === id);
-        if (index === -1) throw new Error('Sector not found');
-        sectors[index] = { ...sectors[index], ...updates };
-        setStore(STORAGE_KEYS.SECTORS, sectors);
-        return sectors[index];
-    },
-    delete: async (id: string): Promise<void> => {
-        await delay();
-        let sectors = getStore(STORAGE_KEYS.SECTORS, mockSectors);
-        sectors = sectors.filter(s => s.id !== id);
-        setStore(STORAGE_KEYS.SECTORS, sectors);
-    },
+    delete: async (id: string) => {
+        const { error } = await supabase.from('sectors').delete().eq('id', id);
+        if (error) throw error;
+    }
 };
 
-// ---- Equipments ----
 export const equipmentsApi = {
-    getAll: async (): Promise<Equipment[]> => {
-        await delay();
-        return getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
+    getAll: async () => {
+        const { data, error } = await supabase.from('equipments').select('*').order('name');
+        if (error) throw error;
+        return (data || []).map(d => ({ ...d, clientId: d.client_id, sectorId: d.sector_id, qrCodeUid: d.qr_code_uid, serialNumber: d.serial_number, installDate: d.install_date })) as Equipment[];
     },
-    getBySectorId: async (sectorId: string): Promise<Equipment[]> => {
-        await delay();
-        const equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        return equips.filter(e => e.sectorId === sectorId);
+    getByQrCode: async (qrCodeUid: string) => {
+        const { data, error } = await supabase.from('equipments').select(`*, clients(name)`).eq('qr_code_uid', qrCodeUid).single();
+        if (error) throw error;
+        return { ...data, clientId: data.client_id, sectorId: data.sector_id, qrCodeUid: data.qr_code_uid, serialNumber: data.serial_number, installDate: data.install_date } as Equipment;
     },
-    getByClientId: async (clientId: string): Promise<Equipment[]> => {
-        await delay();
-        const equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        return equips.filter(e => e.clientId === clientId);
+    create: async (equipment: Omit<Equipment, 'id' | 'qrCodeUid' | 'createdAt'>) => {
+        const payload = {
+            client_id: equipment.clientId, sector_id: equipment.sectorId,
+            name: equipment.name, brand: equipment.brand, model: equipment.model,
+            serial_number: equipment.serialNumber, btus: equipment.btus, details: equipment.details,
+            install_date: equipment.installDate, status: equipment.status
+        };
+
+        const { data, error } = await supabase.from('equipments').insert([payload]).select().single();
+        if (error) throw error;
+        return { ...data, clientId: data.client_id, sectorId: data.sector_id, qrCodeUid: data.qr_code_uid, serialNumber: data.serial_number, installDate: data.install_date } as Equipment;
     },
-    getByQrCode: async (qrCodeUid: string): Promise<Equipment | undefined> => {
-        await delay();
-        const equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        return equips.find(e => e.qrCodeUid === qrCodeUid);
+    update: async (id: string, updates: Partial<Equipment>) => {
+        // Quick snake_case map for updates
+        const payload: any = { ...updates };
+        if (payload.clientId) { payload.client_id = payload.clientId; delete payload.clientId; }
+        if (payload.sectorId) { payload.sector_id = payload.sectorId; delete payload.sectorId; }
+        if (payload.serialNumber) { payload.serial_number = payload.serialNumber; delete payload.serialNumber; }
+        if (payload.installDate) { payload.install_date = payload.installDate; delete payload.installDate; }
+        if (payload.qrCodeUid) { delete payload.qrCodeUid; } // Should not update UID
+
+        const { data, error } = await supabase.from('equipments').update(payload).eq('id', id).select().single();
+        if (error) throw error;
+        return { ...data, clientId: data.client_id, sectorId: data.sector_id, qrCodeUid: data.qr_code_uid, serialNumber: data.serial_number, installDate: data.install_date } as Equipment;
     },
-    create: async (equipment: Equipment): Promise<Equipment> => {
-        await delay();
-        const equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        equips.push(equipment);
-        setStore(STORAGE_KEYS.EQUIPMENTS, equips);
-        return equipment;
-    },
-    update: async (id: string, updates: Partial<Equipment>): Promise<Equipment> => {
-        await delay();
-        const equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        const index = equips.findIndex(e => e.id === id);
-        if (index === -1) throw new Error('Equipment not found');
-        equips[index] = { ...equips[index], ...updates };
-        setStore(STORAGE_KEYS.EQUIPMENTS, equips);
-        return equips[index];
-    },
-    delete: async (id: string): Promise<void> => {
-        await delay();
-        let equips = getStore(STORAGE_KEYS.EQUIPMENTS, mockEquipments);
-        equips = equips.filter(e => e.id !== id);
-        setStore(STORAGE_KEYS.EQUIPMENTS, equips);
-    },
+    delete: async (id: string) => {
+        const { error } = await supabase.from('equipments').delete().eq('id', id);
+        if (error) throw error;
+    }
 };
 
-// ---- Service Orders ----
 export const serviceOrdersApi = {
-    getAll: async (): Promise<ServiceOrder[]> => {
-        await delay();
-        return getStore(STORAGE_KEYS.SERVICE_ORDERS, mockServiceOrders);
+    getAll: async () => {
+        const { data, error } = await supabase.from('service_orders').select('*').order('date', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(d => ({
+            ...d, equipmentId: d.equipment_id, technicianName: "Técnico", // need join for name
+            warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date
+        })) as ServiceOrder[];
     },
-    getByEquipmentId: async (equipmentId: string): Promise<ServiceOrder[]> => {
-        await delay();
-        const orders = getStore(STORAGE_KEYS.SERVICE_ORDERS, mockServiceOrders);
-        return orders.filter(o => o.equipmentId === equipmentId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    getByEquipment: async (equipmentId: string) => {
+        const { data, error } = await supabase.from('service_orders').select('*').eq('equipment_id', equipmentId).order('date', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(d => ({
+            ...d, equipmentId: d.equipment_id, technicianName: "Técnico",
+            warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date
+        })) as ServiceOrder[];
     },
-    create: async (order: ServiceOrder): Promise<ServiceOrder> => {
-        await delay();
-        const orders = getStore(STORAGE_KEYS.SERVICE_ORDERS, mockServiceOrders);
-        orders.push(order);
-        setStore(STORAGE_KEYS.SERVICE_ORDERS, orders);
-        return order;
+    create: async (order: Omit<ServiceOrder, 'id' | 'createdAt'>) => {
+        const payload = {
+            equipment_id: order.equipmentId,
+            date: order.date,
+            type: order.type,
+            status: order.status,
+            description: order.description,
+            warranty_until: order.warrantyUntil,
+            notes: order.notes,
+            next_maintenance_date: order.nextMaintenanceDate
+        };
+
+        const { data, error } = await supabase.from('service_orders').insert([payload]).select().single();
+        if (error) throw error;
+        return {
+            ...data, equipmentId: data.equipment_id, technicianName: "Técnico",
+            warrantyUntil: data.warranty_until, nextMaintenanceDate: data.next_maintenance_date
+        } as ServiceOrder;
     },
-    update: async (id: string, updates: Partial<ServiceOrder>): Promise<ServiceOrder> => {
-        await delay();
-        const orders = getStore(STORAGE_KEYS.SERVICE_ORDERS, mockServiceOrders);
-        const index = orders.findIndex(o => o.id === id);
-        if (index === -1) throw new Error('Service order not found');
-        orders[index] = { ...orders[index], ...updates };
-        setStore(STORAGE_KEYS.SERVICE_ORDERS, orders);
-        return orders[index];
-    },
-    delete: async (id: string): Promise<void> => {
-        await delay();
-        let orders = getStore(STORAGE_KEYS.SERVICE_ORDERS, mockServiceOrders);
-        orders = orders.filter(o => o.id !== id);
-        setStore(STORAGE_KEYS.SERVICE_ORDERS, orders);
-    },
+    update: async (id: string, updates: Partial<ServiceOrder>) => {
+        const payload: any = { ...updates };
+        if (payload.equipmentId) { payload.equipment_id = payload.equipmentId; delete payload.equipmentId; }
+        if (payload.warrantyUntil) { payload.warranty_until = payload.warrantyUntil; delete payload.warrantyUntil; }
+        if (payload.nextMaintenanceDate) { payload.next_maintenance_date = payload.nextMaintenanceDate; delete payload.nextMaintenanceDate; }
+
+        const { data, error } = await supabase.from('service_orders').update(payload).eq('id', id).select().single();
+        if (error) throw error;
+        return {
+            ...data, equipmentId: data.equipment_id, technicianName: "Técnico",
+            warrantyUntil: data.warranty_until, nextMaintenanceDate: data.next_maintenance_date
+        } as ServiceOrder;
+    }
 };

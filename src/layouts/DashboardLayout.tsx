@@ -3,10 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, MapPin, Cpu, ClipboardList,
-    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings
+    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings, Loader2
 } from 'lucide-react';
-import { authApi } from '../services/api';
-import { mockOrganization, mockUser } from '../data/mockData';
+import { authApi, organizationsApi } from '../services/api';
+import type { Organization, User } from '../types';
 import './DashboardLayout.css';
 
 const menuItems = [
@@ -20,21 +20,50 @@ const menuItems = [
 
 export default function DashboardLayout() {
     const [collapsed, setCollapsed] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [organization, setOrganization] = useState<Organization | null>(null);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        // Apply tenant's custom brand color specifically to the dashboard view
-        if (mockOrganization?.brandColor) {
-            document.documentElement.style.setProperty('--color-primary', mockOrganization.brandColor);
-            document.documentElement.style.setProperty('--color-accent-primary', mockOrganization.brandColor);
-        }
-    }, [mockOrganization?.brandColor]);
+        const loadSession = async () => {
+            try {
+                const currentUser = await authApi.getCurrentUser();
+                if (!currentUser) {
+                    navigate('/login');
+                    return;
+                }
+                setUser(currentUser);
+                const org = await organizationsApi.get();
+                setOrganization(org);
 
-    const handleLogout = () => {
-        authApi.logout();
+                if (org?.brandColor) {
+                    document.documentElement.style.setProperty('--color-primary', org.brandColor);
+                    document.documentElement.style.setProperty('--color-accent-primary', org.brandColor);
+                }
+            } catch (error) {
+                console.error("Session error:", error);
+                navigate('/login');
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadSession();
+    }, [navigate]);
+
+    const handleLogout = async () => {
+        await authApi.logout();
         navigate('/login');
     };
+
+    if (loading) {
+        return (
+            <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
+                <Loader2 size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
+            </div>
+        );
+    }
 
     return (
         <div className={`dashboard ${collapsed ? 'dashboard--collapsed' : ''}`}>
@@ -103,7 +132,7 @@ export default function DashboardLayout() {
             <div className="dashboard__main">
                 <header className="topbar">
                     <div className="topbar__left">
-                        <h2 className="topbar__org">{mockOrganization.name}</h2>
+                        <h2 className="topbar__org">{organization?.name || 'MaintQR'}</h2>
                     </div>
                     <div className="topbar__right">
                         <button className="btn btn-icon btn-ghost">
@@ -114,9 +143,9 @@ export default function DashboardLayout() {
                         </button>
                         <div className="topbar__user">
                             <div className="topbar__avatar">
-                                {mockUser.name.charAt(0)}
+                                {user?.name?.charAt(0) || 'U'}
                             </div>
-                            {!collapsed && <span className="topbar__username">{mockUser.name}</span>}
+                            {!collapsed && <span className="topbar__username">{user?.name || 'Técnico'}</span>}
                         </div>
                     </div>
                 </header>
