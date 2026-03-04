@@ -132,7 +132,7 @@ export default function ClientPortalPage() {
                 </motion.div>
 
                 {/* Client Header Info */}
-                <motion.div className="public-card glass-card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
+                <motion.div className="public-card glass-card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}>
                     <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-lg)', background: 'rgba(99, 102, 241, 0.12)', color: 'var(--color-accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Building size={24} />
                     </div>

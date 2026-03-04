@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Cpu, ClipboardList, Shield, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Users, Cpu, ClipboardList, Shield, TrendingUp } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { clientsApi, equipmentsApi, serviceOrdersApi } from '../../services/api';
 import type { Client, Equipment, ServiceOrder } from '../../types';

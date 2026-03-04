@@ -62,6 +62,11 @@ export const clientsApi = {
         if (error) throw error;
         return data as Client[];
     },
+    getById: async (id: string) => {
+        const { data, error } = await supabase.from('clients').select('*').eq('id', id).single();
+        if (error) throw error;
+        return data as Client;
+    },
     create: async (client: Omit<Client, 'id' | 'orgId' | 'createdAt'>) => {
         // orgId is injected via backend RLS ideally, or we fetch auth session here
         const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +100,13 @@ export const sectorsApi = {
         delete payload.clientId;
 
         const { data, error } = await supabase.from('sectors').insert([payload]).select().single();
+        if (error) throw error;
+        return { ...data, clientId: data.client_id } as Sector;
+    },
+    update: async (id: string, updates: Partial<Sector>) => {
+        const payload: any = { ...updates };
+        if (payload.clientId) { payload.client_id = payload.clientId; delete payload.clientId; }
+        const { data, error } = await supabase.from('sectors').update(payload).eq('id', id).select().single();
         if (error) throw error;
         return { ...data, clientId: data.client_id } as Sector;
     },

@@ -1,10 +1,18 @@
 import { useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { QrCode, ClipboardList, Shield, History, Smartphone, Bell } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import './FeaturesSection.css';
 import gsap from 'gsap';
 
-const features = [
+type Feature = {
+    icon: LucideIcon;
+    title: string;
+    description: string;
+    color: string;
+};
+
+const features: Feature[] = [
     {
         icon: QrCode,
         title: 'QR Code Inteligente',
@@ -43,7 +51,7 @@ const features = [
     },
 ];
 
-function FeatureCard({ feature, index }: { feature: typeof features[0]; index: number }) {
+function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
     const ref = useRef<HTMLDivElement>(null);
     const isInView = useInView(ref, { once: true, margin: '-100px' });
 

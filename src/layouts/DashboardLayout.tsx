@@ -70,7 +70,7 @@ export default function DashboardLayout() {
             <motion.aside
                 className="sidebar"
                 animate={{ width: collapsed ? 72 : 280 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
             >
                 <div className="sidebar__header">
                     {!collapsed && (

@@ -25,7 +25,7 @@ export default function Navbar() {
             className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
         >
             <div className="navbar__inner">
                 <Link to="/" className="navbar__logo">

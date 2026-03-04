@@ -19,7 +19,6 @@ export default function SectorsPage() {
     }, []);
 
     const filtered = sectors.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
-    const getClient = (id: string) => clients.find(c => c.id === id);
 
     const openCreate = () => { setEditing(null); setForm({ name: '', clientId: clients[0]?.id || '', description: '' }); setShowModal(true); };
 

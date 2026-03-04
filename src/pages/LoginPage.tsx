@@ -36,7 +36,7 @@ export default function LoginPage() {
                 className="login-card glass-card"
                 initial={{ opacity: 0, y: 40, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
             >
                 <div className="login-card__header">
                     <Link to="/" className="login-card__logo">

@@ -1,5 +1,5 @@
 import { QrCode, Github, Linkedin, Instagram } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
 import './Footer.css';
 
 export default function Footer() {

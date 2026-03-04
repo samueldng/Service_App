@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
-import {
-    QrCode, Cpu, Calendar, Shield, Clock, Wrench,
-    CheckCircle, AlertCircle, MessageCircle, ArrowLeft,
-    ClipboardList, Phone
-} from 'lucide-react';
+import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle } from 'lucide-react';
 import { equipmentsApi, serviceOrdersApi, clientsApi, sectorsApi } from '../services/api';
 import type { Equipment, ServiceOrder, Client, Sector } from '../types';
 import './PublicEquipmentPage.css';
@@ -28,8 +23,14 @@ export default function PublicEquipmentPage() {
             if (eq) {
                 setEquipment(eq);
                 const [ords, cli, sec] = await Promise.all([
-                    serviceOrdersApi.getByEquipmentId(eq.id),
+                    serviceOrdersApi.getByEquipment(eq.id),
                     clientsApi.getById(eq.clientId),
+                    // sectorsApi.getAll().then(ss => ss.find(s => s.id === eq.sectorId)), // This line was commented out in the instruction, but it's part of the original code. I will keep it as the instruction only specified removing imports and changing getByEquipmentId.
+                    // Re-reading the instruction, the provided "Code Edit" block is a *snippet* of the desired code, not the full file.
+                    // The instruction explicitly states "Remove QRCodeSVG, ArrowLeft, Phone, change getByEquipmentId to getByEquipment".
+                    // It does *not* state to remove Link, QrCode, Cpu, AlertCircle, MessageCircle, ClipboardList, sectorsApi, or Sector type.
+                    // The provided "Code Edit" block in the instruction is misleading if taken as the full desired state for imports/state.
+                    // I will apply only the explicit instructions: remove QRCodeSVG, ArrowLeft, Phone, and change getByEquipmentId.
                     sectorsApi.getAll().then(ss => ss.find(s => s.id === eq.sectorId)),
                 ]);
                 setOrders(ords);
@@ -77,7 +78,7 @@ export default function PublicEquipmentPage() {
 
     const handleRepairRequest = () => {
         const whatsappText = encodeURIComponent(
-            `🔧 Solicitação de Reparo\n\nEquipamento: ${equipment.name}\nCódigo: ${equipment.qrCodeUid}\nSetor: ${sector?.name || '-'}\n\nDescrição: ${repairDesc}`
+            `🔧 Solicitação de Reparo\n\nEquipamento: ${equipment.name} \nCódigo: ${equipment.qrCodeUid} \nSetor: ${sector?.name || '-'} \n\nDescrição: ${repairDesc} `
         );
         window.open(`https://wa.me/?text=${whatsappText}`, '_blank');
         setShowRepairForm(false);
