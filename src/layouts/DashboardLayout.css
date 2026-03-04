@@ -321,6 +321,12 @@
     gap: var(--space-5);
 }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
 .modal__actions {
     display: flex;
     justify-content: flex-end;
@@ -453,6 +459,10 @@
     .activity-item {
         gap: var(--space-3) !important;
         padding: var(--space-2) !important;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
     }
 
     .activity-item .badge {

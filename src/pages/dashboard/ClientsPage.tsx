@@ -128,7 +128,7 @@ export default function ClientsPage() {
                                     <label className="form-label">Nome</label>
                                     <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nome do cliente" />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Tipo</label>
                                         <select className="form-input" value={form.documentType} onChange={e => setForm(p => ({ ...p, documentType: e.target.value as 'CPF' | 'CNPJ' }))}>
@@ -141,7 +141,7 @@ export default function ClientsPage() {
                                         <input className="form-input" value={form.document} onChange={e => setForm(p => ({ ...p, document: e.target.value }))} placeholder="00.000.000/0001-00" />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Email</label>
                                         <input className="form-input" type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="email@empresa.com" />

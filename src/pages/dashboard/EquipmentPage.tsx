@@ -194,7 +194,7 @@ export default function EquipmentPage() {
                                     <label className="form-label">Nome</label>
                                     <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Split Hi-Wall Inverter" />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Marca</label>
                                         <input className="form-input" value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))} placeholder="Daikin" />
@@ -204,7 +204,7 @@ export default function EquipmentPage() {
                                         <input className="form-input" value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} placeholder="FTKC60TV16U" />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Nº Série</label>
                                         <input className="form-input" value={form.serialNumber} onChange={e => setForm(p => ({ ...p, serialNumber: e.target.value }))} />
@@ -214,7 +214,7 @@ export default function EquipmentPage() {
                                         <input className="form-input" type="number" value={form.btus} onChange={e => setForm(p => ({ ...p, btus: e.target.value }))} placeholder="12000" />
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Cliente</label>
                                         <select className="form-input" value={form.clientId} onChange={e => setForm(p => ({ ...p, clientId: e.target.value }))}>
