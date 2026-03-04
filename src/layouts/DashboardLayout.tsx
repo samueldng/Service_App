@@ -1,0 +1,140 @@
+import { useState, useEffect } from 'react';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    LayoutDashboard, Users, MapPin, Cpu, ClipboardList,
+    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings
+} from 'lucide-react';
+import { authApi } from '../services/api';
+import { mockOrganization, mockUser } from '../data/mockData';
+import './DashboardLayout.css';
+
+const menuItems = [
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: true },
+    { path: '/dashboard/clients', icon: Users, label: 'Clientes', end: false },
+    { path: '/dashboard/sectors', icon: MapPin, label: 'Setores', end: false },
+    { path: '/dashboard/equipment', icon: Cpu, label: 'Equipamentos', end: false },
+    { path: '/dashboard/service-orders', icon: ClipboardList, label: 'Ordens de Serviço', end: false },
+    { path: '/dashboard/settings', icon: Settings, label: 'Configurações', end: false },
+];
+
+export default function DashboardLayout() {
+    const [collapsed, setCollapsed] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        // Apply tenant's custom brand color specifically to the dashboard view
+        if (mockOrganization?.brandColor) {
+            document.documentElement.style.setProperty('--color-primary', mockOrganization.brandColor);
+            document.documentElement.style.setProperty('--color-accent-primary', mockOrganization.brandColor);
+        }
+    }, [mockOrganization?.brandColor]);
+
+    const handleLogout = () => {
+        authApi.logout();
+        navigate('/login');
+    };
+
+    return (
+        <div className={`dashboard ${collapsed ? 'dashboard--collapsed' : ''}`}>
+            <motion.aside
+                className="sidebar"
+                animate={{ width: collapsed ? 72 : 280 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+                <div className="sidebar__header">
+                    {!collapsed && (
+                        <motion.div className="sidebar__logo" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <div className="navbar__logo-icon" style={{ width: 32, height: 32 }}>
+                                <QrCode size={18} />
+                            </div>
+                            <span className="navbar__logo-text" style={{ fontSize: '1rem' }}>
+                                Maint<span className="text-gradient">QR</span>
+                            </span>
+                        </motion.div>
+                    )}
+                    {collapsed && (
+                        <div className="navbar__logo-icon" style={{ width: 36, height: 36, margin: '0 auto' }}>
+                            <QrCode size={18} />
+                        </div>
+                    )}
+                    <button className="sidebar__toggle" onClick={() => setCollapsed(!collapsed)}>
+                        {collapsed ? <Menu size={18} /> : <ChevronLeft size={18} />}
+                    </button>
+                </div>
+
+                <nav className="sidebar__nav">
+                    {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                end={item.end}
+                                className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
+                            >
+                                <Icon size={20} />
+                                <AnimatePresence>
+                                    {!collapsed && (
+                                        <motion.span
+                                            initial={{ opacity: 0, width: 0 }}
+                                            animate={{ opacity: 1, width: 'auto' }}
+                                            exit={{ opacity: 0, width: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            {item.label}
+                                        </motion.span>
+                                    )}
+                                </AnimatePresence>
+                            </NavLink>
+                        );
+                    })}
+                </nav>
+
+                <div className="sidebar__footer">
+                    <button className="sidebar__link" onClick={handleLogout}>
+                        <LogOut size={20} />
+                        {!collapsed && <span>Sair</span>}
+                    </button>
+                </div>
+            </motion.aside>
+
+            <div className="dashboard__main">
+                <header className="topbar">
+                    <div className="topbar__left">
+                        <h2 className="topbar__org">{mockOrganization.name}</h2>
+                    </div>
+                    <div className="topbar__right">
+                        <button className="btn btn-icon btn-ghost">
+                            <Bell size={20} />
+                        </button>
+                        <button className="btn btn-icon btn-ghost" onClick={() => navigate('/dashboard/settings')}>
+                            <Settings size={20} />
+                        </button>
+                        <div className="topbar__user">
+                            <div className="topbar__avatar">
+                                {mockUser.name.charAt(0)}
+                            </div>
+                            {!collapsed && <span className="topbar__username">{mockUser.name}</span>}
+                        </div>
+                    </div>
+                </header>
+
+                <main className="dashboard__content">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={location.pathname}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            <Outlet />
+                        </motion.div>
+                    </AnimatePresence>
+                </main>
+            </div>
+        </div>
+    );
+}

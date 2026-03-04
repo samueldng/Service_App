@@ -1,0 +1,105 @@
+.how-it-works {
+    background: var(--color-bg-secondary);
+}
+
+.how-it-works__header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+}
+
+.how-it-works__title {
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    margin-top: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.how-it-works__subtitle {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+}
+
+.how-it-works__steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+    position: relative;
+}
+
+.how-step {
+    position: relative;
+    text-align: center;
+    padding: var(--space-8) var(--space-4);
+}
+
+.how-step__number {
+    font-family: var(--font-heading);
+    font-size: var(--text-5xl);
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0.2;
+    position: absolute;
+    top: 0;
+    right: var(--space-4);
+}
+
+.how-step__icon-wrapper {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-xl);
+    color: var(--color-accent-primary);
+    margin: 0 auto var(--space-5);
+}
+
+.how-step__title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+}
+
+.how-step__desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+.how-step__connector {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .how-step__connector {
+        display: block;
+        position: absolute;
+        top: 50%;
+        right: -12%;
+        width: 24%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--color-accent-primary), transparent);
+        opacity: 0.3;
+    }
+}
+
+@media (max-width: 1024px) {
+    .how-it-works__steps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .how-step__connector {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .how-it-works__steps {
+        grid-template-columns: 1fr;
+    }
+}
