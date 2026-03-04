@@ -89,7 +89,7 @@ export default function ClientsPage() {
                         <tbody>
                             {filtered.map((client, i) => (
                                 <motion.tr key={client.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
-                                    <td>
+                                    <td data-label="Nome">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                                             <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-lg)', background: 'rgba(99, 102, 241, 0.12)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 {client.documentType === 'CNPJ' ? <Building size={16} /> : <User size={16} />}
@@ -97,10 +97,10 @@ export default function ClientsPage() {
                                             <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{client.name}</span>
                                         </div>
                                     </td>
-                                    <td><span className={`badge ${client.documentType === 'CNPJ' ? 'badge-primary' : 'badge-info'}`}>{client.document}</span></td>
-                                    <td>{client.email}</td>
-                                    <td>{client.phone}</td>
-                                    <td>
+                                    <td data-label="Documento"><span className={`badge ${client.documentType === 'CNPJ' ? 'badge-primary' : 'badge-info'}`}>{client.document}</span></td>
+                                    <td data-label="Email">{client.email}</td>
+                                    <td data-label="Telefone">{client.phone}</td>
+                                    <td data-label="Ações">
                                         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                                             <button className="btn btn-ghost btn-icon" onClick={() => navigate(`/dashboard/equipment?client=${client.id}`)} title="Ver Equipamentos"><ListChecks size={16} /></button>
                                             <button className="btn btn-ghost btn-icon" onClick={() => copyPortalLink(client.id)} title="Copiar Link do Portal do Cliente"><ExternalLink size={16} /></button>

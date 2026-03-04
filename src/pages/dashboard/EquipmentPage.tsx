@@ -144,7 +144,7 @@ export default function EquipmentPage() {
                                 const client = getClient(eq.clientId);
                                 return (
                                     <motion.tr key={eq.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
-                                        <td>
+                                        <td data-label="Equipamento">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                                                 <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-lg)', background: 'rgba(99, 102, 241, 0.12)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <Cpu size={18} />
@@ -155,17 +155,17 @@ export default function EquipmentPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td><span className="badge badge-primary" style={{ fontFamily: 'monospace' }}>{eq.qrCodeUid}</span></td>
-                                        <td>
+                                        <td data-label="QR Code"><span className="badge badge-primary" style={{ fontFamily: 'monospace' }}>{eq.qrCodeUid}</span></td>
+                                        <td data-label="Setor / Cliente">
                                             <div style={{ fontSize: 'var(--text-sm)' }}>{sector?.name}</div>
                                             <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>{client?.name}</div>
                                         </td>
-                                        <td>
+                                        <td data-label="Status">
                                             <span className={`badge ${eq.status === 'active' ? 'badge-success' : eq.status === 'maintenance' ? 'badge-warning' : 'badge-danger'}`}>
                                                 {eq.status === 'active' ? 'Ativo' : eq.status === 'maintenance' ? 'Manutenção' : 'Inativo'}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td data-label="Ações">
                                             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
                                                 <button className="btn btn-ghost btn-icon" onClick={() => setViewing(eq)} title="Visualizar Detalhes & QR Code"><QrCode size={16} /></button>
                                                 <button className="btn btn-ghost btn-icon" onClick={() => openEdit(eq)} title="Editar"><Edit2 size={16} /></button>
