@@ -124,7 +124,10 @@ export const clientsApi = {
     create: async (client: Omit<Client, 'id' | 'orgId' | 'createdAt'>) => {
         // Fetch the user's org_id to associate the client with the correct organization
         const { data: { user } } = await supabase.auth.getUser();
-        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user?.id).maybeSingle();
+        if (!user) throw new Error('Usuário não autenticado.');
+
+        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).maybeSingle();
+        if (!profile?.org_id) throw new Error('Usuário não está vinculado a uma organização. Faça login novamente ou contate o administrador.');
 
         const payload = {
             name: client.name,
@@ -133,7 +136,7 @@ export const clientsApi = {
             email: client.email,
             phone: client.phone,
             address: client.address,
-            org_id: profile?.org_id,
+            org_id: profile.org_id,
         };
 
         const { data, error } = await supabase.from('clients').insert([payload]).select().single();

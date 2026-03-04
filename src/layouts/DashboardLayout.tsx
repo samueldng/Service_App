@@ -20,6 +20,7 @@ const menuItems = [
 
 export default function DashboardLayout() {
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [organization, setOrganization] = useState<Organization | null>(null);
     const [loading, setLoading] = useState(true);
@@ -67,8 +68,13 @@ export default function DashboardLayout() {
 
     return (
         <div className={`dashboard ${collapsed ? 'dashboard--collapsed' : ''}`}>
+            {/* Mobile overlay */}
+            <div
+                className={`sidebar-overlay ${mobileOpen ? 'visible' : ''}`}
+                onClick={() => setMobileOpen(false)}
+            />
             <motion.aside
-                className="sidebar"
+                className={`sidebar ${mobileOpen ? 'open' : ''}`}
                 animate={{ width: collapsed ? 72 : 280 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
             >
@@ -132,6 +138,9 @@ export default function DashboardLayout() {
             <div className="dashboard__main">
                 <header className="topbar">
                     <div className="topbar__left">
+                        <button className="topbar__mobile-toggle" onClick={() => setMobileOpen(true)}>
+                            <Menu size={20} />
+                        </button>
                         <h2 className="topbar__org">{organization?.name || 'MaintQR'}</h2>
                     </div>
                     <div className="topbar__right">

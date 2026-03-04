@@ -84,7 +84,7 @@ export default function DashboardHome() {
                 })}
             </motion.div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)', marginBottom: 'var(--space-8)' }}>
+            <div className="charts-grid">
                 <motion.div className="glass-card" style={{ padding: 'var(--space-6)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
                     <h3 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)', fontWeight: 600 }}>Manutenções por Mês</h3>
                     <ResponsiveContainer width="100%" height={280}>
@@ -134,7 +134,7 @@ export default function DashboardHome() {
                 </motion.div>
             </div>
 
-            <motion.div className="glass-card" style={{ padding: 'var(--space-6)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+            <motion.div className="glass-card activity-card" style={{ padding: 'var(--space-6)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                 <h3 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--text-lg)', fontWeight: 600 }}>Atividade Recente</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                     {orders.slice(0, 5).map((order) => {
@@ -144,6 +144,7 @@ export default function DashboardHome() {
                                 key={order.id}
                                 onClick={() => navigate('/dashboard/service-orders')}
                                 whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+                                className="activity-item"
                                 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)', cursor: 'pointer' }}
                             >
                                 <div style={{
