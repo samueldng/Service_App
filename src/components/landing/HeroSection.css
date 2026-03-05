@@ -135,35 +135,36 @@
 
 @media (max-width: 768px) {
     .hero {
-        padding-top: var(--space-24);
-        padding-bottom: var(--space-16);
+        padding-top: var(--space-20);
+        padding-bottom: var(--space-10);
         min-height: auto;
     }
 
     .hero__content {
         padding: var(--space-4);
-        margin-top: var(--space-8);
+        margin-top: var(--space-6);
     }
 
     .hero__badge {
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-4);
         font-size: var(--text-xs);
     }
 
     .hero__title {
-        font-size: var(--text-4xl);
-        margin-bottom: var(--space-4);
+        font-size: var(--text-3xl);
+        margin-bottom: var(--space-3);
     }
 
     .hero__subtitle {
-        font-size: var(--text-base);
-        margin-bottom: var(--space-8);
+        font-size: var(--text-sm);
+        margin-bottom: var(--space-6);
+        line-height: 1.6;
     }
 
     .hero__actions {
         flex-direction: column;
         width: 100%;
-        margin-bottom: var(--space-10);
+        margin-bottom: var(--space-8);
     }
 
     .hero__actions .btn {
@@ -171,12 +172,26 @@
     }
 
     .hero__stats {
-        flex-direction: column;
-        gap: var(--space-6);
+        flex-direction: row;
+        gap: var(--space-4);
+        justify-content: center;
+        width: 100%;
+        padding: var(--space-4) var(--space-2);
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hero__stat-value {
+        font-size: var(--text-xl);
+    }
+
+    .hero__stat-label {
+        font-size: var(--text-xs);
     }
 
     .hero__stat-divider {
-        width: 40px;
-        height: 1px;
+        width: 1px;
+        height: 32px;
     }
 }

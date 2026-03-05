@@ -54,7 +54,7 @@ export default function RegisterPage() {
                         </span>
                     </Link>
                     <h1 className="login-card__title">Crie sua conta</h1>
-                    <p className="login-card__subtitle">14 dias grátis • Sem cartão de crédito</p>
+                    <p className="login-card__subtitle">7 dias grátis • Sem cartão de crédito</p>
                 </div>
 
                 <form className="login-card__form" onSubmit={handleSubmit}>

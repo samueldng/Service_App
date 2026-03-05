@@ -20,6 +20,19 @@ export default function Navbar() {
         { label: 'Planos', href: '#pricing' },
     ];
 
+    const handleMobileNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+        e.preventDefault();
+        setMobileOpen(false);
+        // Small delay to let the menu close before scrolling
+        setTimeout(() => {
+            const targetId = href.replace('#', '');
+            const element = document.getElementById(targetId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    };
+
     return (
         <motion.nav
             className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
@@ -65,13 +78,18 @@ export default function Navbar() {
                         transition={{ duration: 0.3 }}
                     >
                         {navLinks.map((link) => (
-                            <a key={link.href} href={link.href} className="navbar__mobile-link" onClick={() => setMobileOpen(false)}>
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className="navbar__mobile-link"
+                                onClick={(e) => handleMobileNavClick(e, link.href)}
+                            >
                                 {link.label}
                             </a>
                         ))}
                         <div className="navbar__mobile-actions">
-                            <Link to="/login" className="btn btn-ghost" style={{ width: '100%' }}>Entrar</Link>
-                            <Link to="/register" className="btn btn-primary" style={{ width: '100%' }}>Começar Grátis</Link>
+                            <Link to="/login" className="navbar__mobile-login-btn" onClick={() => setMobileOpen(false)}>Entrar</Link>
+                            <Link to="/register" className="btn btn-primary" style={{ width: '100%' }} onClick={() => setMobileOpen(false)}>Começar Grátis</Link>
                         </div>
                     </motion.div>
                 )}

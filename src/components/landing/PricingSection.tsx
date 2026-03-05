@@ -6,11 +6,11 @@ import './PricingSection.css';
 const plans = [
     {
         name: 'Starter',
-        price: 'R$ 49',
+        price: 'R$ 79',
         period: '/mês',
         description: 'Ideal para profissionais autônomos',
         features: [
-            'Até 50 equipamentos',
+            'Até 30 equipamentos',
             'Geração de QR Code',
             'Histórico básico',
             'Portal do cliente',
@@ -21,11 +21,11 @@ const plans = [
     },
     {
         name: 'Professional',
-        price: 'R$ 129',
+        price: 'R$ 149',
         period: '/mês',
         description: 'Para empresas em crescimento',
         features: [
-            'Até 500 equipamentos',
+            'Até 150 equipamentos',
             'QR Code + Impressão Bluetooth',
             'Histórico completo com fotos',
             'Alertas de garantia',
@@ -72,7 +72,7 @@ export default function PricingSection() {
                         Escolha o plano <span className="text-gradient">ideal</span>
                     </h2>
                     <p className="pricing__subtitle">
-                        Comece grátis por 14 dias. Sem cartão de crédito.
+                        Comece grátis por 7 dias. Sem cartão de crédito.
                     </p>
                 </motion.div>
 
