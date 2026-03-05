@@ -1,46 +1,135 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, X, Building, User, ExternalLink, ListChecks } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clientsApi } from '../../services/api';
+import { maskDocument, maskPhone } from '../../lib/masks';
+import { filterUFs, getCitiesByUF, filterCities, type UF, type City } from '../../lib/locations';
 import type { Client } from '../../types';
+
+interface ClientForm {
+    name: string;
+    document: string;
+    documentType: 'CPF' | 'CNPJ';
+    email: string;
+    phone: string;
+    street: string;
+    city: string;
+    uf: string;
+}
+
+const emptyForm: ClientForm = { name: '', document: '', documentType: 'CNPJ', email: '', phone: '', street: '', city: '', uf: '' };
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Client | null>(null);
-    const [form, setForm] = useState({ name: '', document: '', documentType: 'CNPJ' as 'CNPJ' | 'CPF', email: '', phone: '', address: '' });
+    const [form, setForm] = useState<ClientForm>({ ...emptyForm });
     const navigate = useNavigate();
+
+    // UF autocomplete
+    const [ufQuery, setUfQuery] = useState('');
+    const [ufSuggestions, setUfSuggestions] = useState<UF[]>([]);
+    const [showUfDropdown, setShowUfDropdown] = useState(false);
+    const ufRef = useRef<HTMLDivElement>(null);
+
+    // City autocomplete
+    const [cityQuery, setCityQuery] = useState('');
+    const [allCities, setAllCities] = useState<City[]>([]);
+    const [citySuggestions, setCitySuggestions] = useState<City[]>([]);
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [loadingCities, setLoadingCities] = useState(false);
+    const cityRef = useRef<HTMLDivElement>(null);
 
     const copyPortalLink = (id: string) => {
         navigator.clipboard.writeText(`${window.location.origin}/portal/${id}`);
-        alert('Link do Portal copiado!'); // Simple feedback
+        alert('Link do Portal copiado!');
     };
 
     useEffect(() => { clientsApi.getAll().then(setClients).catch(console.error); }, []);
 
+    // Close dropdowns on outside click
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            if (ufRef.current && !ufRef.current.contains(e.target as Node)) setShowUfDropdown(false);
+            if (cityRef.current && !cityRef.current.contains(e.target as Node)) setShowCityDropdown(false);
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, []);
+
+    // Load cities when UF changes
+    useEffect(() => {
+        if (form.uf) {
+            setLoadingCities(true);
+            getCitiesByUF(form.uf).then(cities => {
+                setAllCities(cities);
+                setLoadingCities(false);
+            });
+        } else {
+            setAllCities([]);
+        }
+    }, [form.uf]);
+
     const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.document.includes(search));
+
+    const parseAddress = (address: string) => {
+        // Parse "Rua X, 123 - Cidade/UF" format
+        const parts = address.split(' - ');
+        const street = parts[0] || '';
+        const cityUf = parts[1] || '';
+        const cityUfParts = cityUf.split('/');
+        return { street, city: cityUfParts[0]?.trim() || '', uf: cityUfParts[1]?.trim() || '' };
+    };
+
+    const buildAddress = (street: string, city: string, uf: string) => {
+        if (!street && !city && !uf) return '';
+        const location = [city, uf].filter(Boolean).join('/');
+        return [street, location].filter(Boolean).join(' - ');
+    };
 
     const openCreate = () => {
         setEditing(null);
-        setForm({ name: '', document: '', documentType: 'CNPJ' as const, email: '', phone: '', address: '' });
+        setForm({ ...emptyForm });
+        setUfQuery('');
+        setCityQuery('');
         setShowModal(true);
     };
 
     const openEdit = (client: Client) => {
         setEditing(client);
-        setForm({ name: client.name, document: client.document, documentType: client.documentType, email: client.email, phone: client.phone, address: client.address });
+        const addr = parseAddress(client.address);
+        setForm({
+            name: client.name,
+            document: client.document,
+            documentType: client.documentType,
+            email: client.email,
+            phone: client.phone,
+            street: addr.street,
+            city: addr.city,
+            uf: addr.uf,
+        });
+        setUfQuery(addr.uf);
+        setCityQuery(addr.city);
         setShowModal(true);
     };
 
     const handleSave = async () => {
         try {
+            const payload = {
+                name: form.name,
+                document: form.document,
+                documentType: form.documentType,
+                email: form.email,
+                phone: form.phone,
+                address: buildAddress(form.street, form.city, form.uf),
+            };
             if (editing) {
-                const updated = await clientsApi.update(editing.id, { ...form });
+                const updated = await clientsApi.update(editing.id, payload);
                 setClients(prev => prev.map(c => c.id === editing.id ? updated : c));
             } else {
-                const newClient = await clientsApi.create(form);
+                const newClient = await clientsApi.create(payload);
                 setClients(prev => [...prev, newClient]);
             }
             setShowModal(false);
@@ -54,6 +143,53 @@ export default function ClientsPage() {
             await clientsApi.delete(id);
             setClients(prev => prev.filter(c => c.id !== id));
         }
+    };
+
+    // Mask handlers
+    const handleDocumentChange = (value: string) => {
+        setForm(p => ({ ...p, document: maskDocument(value, p.documentType) }));
+    };
+
+    const handleDocTypeChange = (type: 'CPF' | 'CNPJ') => {
+        setForm(p => ({ ...p, documentType: type, document: maskDocument(p.document, type) }));
+    };
+
+    const handlePhoneChange = (value: string) => {
+        setForm(p => ({ ...p, phone: maskPhone(value) }));
+    };
+
+    // UF autocomplete handlers
+    const handleUfInput = (value: string) => {
+        setUfQuery(value);
+        setUfSuggestions(filterUFs(value));
+        setShowUfDropdown(true);
+        // If exact match with a known UF sigla, don't clear
+        const exactMatch = filterUFs(value).find(uf => uf.sigla.toLowerCase() === value.toLowerCase());
+        if (!exactMatch) {
+            setForm(p => ({ ...p, uf: '', city: '' }));
+            setCityQuery('');
+            setAllCities([]);
+        }
+    };
+
+    const selectUF = (uf: UF) => {
+        setForm(p => ({ ...p, uf: uf.sigla, city: '' }));
+        setUfQuery(uf.sigla);
+        setCityQuery('');
+        setShowUfDropdown(false);
+    };
+
+    // City autocomplete handlers
+    const handleCityInput = (value: string) => {
+        setCityQuery(value);
+        setCitySuggestions(filterCities(allCities, value).slice(0, 15));
+        setShowCityDropdown(true);
+    };
+
+    const selectCity = (city: City) => {
+        setForm(p => ({ ...p, city: city.nome }));
+        setCityQuery(city.nome);
+        setShowCityDropdown(false);
     };
 
     return (
@@ -124,23 +260,34 @@ export default function ClientsPage() {
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
                             </div>
                             <div className="modal__form">
+                                {/* Nome */}
                                 <div className="form-group">
                                     <label className="form-label">Nome</label>
                                     <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Nome do cliente" />
                                 </div>
+
+                                {/* Tipo + Documento */}
                                 <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Tipo</label>
-                                        <select className="form-input" value={form.documentType} onChange={e => setForm(p => ({ ...p, documentType: e.target.value as 'CPF' | 'CNPJ' }))}>
+                                        <select className="form-input" value={form.documentType} onChange={e => handleDocTypeChange(e.target.value as 'CPF' | 'CNPJ')}>
                                             <option value="CNPJ">CNPJ</option>
                                             <option value="CPF">CPF</option>
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Documento</label>
-                                        <input className="form-input" value={form.document} onChange={e => setForm(p => ({ ...p, document: e.target.value }))} placeholder="00.000.000/0001-00" />
+                                        <label className="form-label">{form.documentType}</label>
+                                        <input
+                                            className="form-input"
+                                            value={form.document}
+                                            onChange={e => handleDocumentChange(e.target.value)}
+                                            placeholder={form.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0001-00'}
+                                            maxLength={form.documentType === 'CPF' ? 14 : 18}
+                                        />
                                     </div>
                                 </div>
+
+                                {/* Email + Telefone */}
                                 <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">Email</label>
@@ -148,13 +295,75 @@ export default function ClientsPage() {
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Telefone</label>
-                                        <input className="form-input" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder="(11) 99999-9999" />
+                                        <input
+                                            className="form-input"
+                                            value={form.phone}
+                                            onChange={e => handlePhoneChange(e.target.value)}
+                                            placeholder="(00) 00000-0000"
+                                            maxLength={15}
+                                        />
                                     </div>
                                 </div>
+
+                                {/* Endereço: Rua + Número */}
                                 <div className="form-group">
-                                    <label className="form-label">Endereço</label>
-                                    <input className="form-input" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} placeholder="Rua, número - Cidade/UF" />
+                                    <label className="form-label">Rua e Número</label>
+                                    <input className="form-input" value={form.street} onChange={e => setForm(p => ({ ...p, street: e.target.value }))} placeholder="Ex: Rua das Flores, 123" />
                                 </div>
+
+                                {/* UF + Cidade */}
+                                <div className="form-grid">
+                                    <div className="form-group" ref={ufRef} style={{ position: 'relative' }}>
+                                        <label className="form-label">UF</label>
+                                        <input
+                                            className="form-input"
+                                            value={ufQuery}
+                                            onChange={e => handleUfInput(e.target.value)}
+                                            onFocus={() => { setUfSuggestions(filterUFs(ufQuery)); setShowUfDropdown(true); }}
+                                            placeholder="Digite UF..."
+                                            autoComplete="off"
+                                        />
+                                        {showUfDropdown && ufSuggestions.length > 0 && (
+                                            <div className="autocomplete-dropdown">
+                                                {ufSuggestions.map(uf => (
+                                                    <div
+                                                        key={uf.sigla}
+                                                        className={`autocomplete-item ${form.uf === uf.sigla ? 'autocomplete-item--active' : ''}`}
+                                                        onClick={() => selectUF(uf)}
+                                                    >
+                                                        <strong>{uf.sigla}</strong> — {uf.nome}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="form-group" ref={cityRef} style={{ position: 'relative' }}>
+                                        <label className="form-label">Cidade</label>
+                                        <input
+                                            className="form-input"
+                                            value={cityQuery}
+                                            onChange={e => handleCityInput(e.target.value)}
+                                            onFocus={() => { if (allCities.length > 0) { setCitySuggestions(filterCities(allCities, cityQuery).slice(0, 15)); setShowCityDropdown(true); } }}
+                                            placeholder={!form.uf ? 'Selecione UF primeiro' : loadingCities ? 'Carregando...' : 'Digite a cidade...'}
+                                            disabled={!form.uf || loadingCities}
+                                            autoComplete="off"
+                                        />
+                                        {showCityDropdown && citySuggestions.length > 0 && (
+                                            <div className="autocomplete-dropdown">
+                                                {citySuggestions.map(city => (
+                                                    <div
+                                                        key={city.nome}
+                                                        className={`autocomplete-item ${form.city === city.nome ? 'autocomplete-item--active' : ''}`}
+                                                        onClick={() => selectCity(city)}
+                                                    >
+                                                        {city.nome}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="modal__actions">
                                     <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
                                     <button className="btn btn-primary" onClick={handleSave}>{editing ? 'Salvar' : 'Criar Cliente'}</button>

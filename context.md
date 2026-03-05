@@ -71,7 +71,9 @@ saas_sevice/
     ├── App.tsx                   # Roteamento principal (BrowserRouter)
     ├── index.css                 # CSS global + design tokens
     ├── lib/
-    │   └── supabase.ts           # Cliente Supabase singleton
+    │   ├── supabase.ts           # Cliente Supabase singleton
+    │   ├── masks.ts              # Máscaras: CPF, CNPJ, Telefone + validação
+    │   └── locations.ts          # UF list + IBGE API para cidades (autocomplete)
     ├── types/
     │   └── index.ts              # Interfaces TypeScript centralizadas
     ├── services/
@@ -379,6 +381,16 @@ VITE_SUPABASE_ANON_KEY=<chave anon/pública do Supabase>
 | `public.create_tenant_from_auth()` | Supabase (SQL)  | Cria org + vincula user como admin                     |
 | `public.get_public_equipment_data()` | Supabase (SQL) | Dados públicos do equipamento via QR                  |
 | `public.handle_new_user()`    | Supabase (SQL)        | Trigger: cria perfil ao registrar                      |
+| `maskCPF(value)`              | `src/lib/masks.ts`    | Formata CPF: ###.###.###-##                            |
+| `maskCNPJ(value)`             | `src/lib/masks.ts`    | Formata CNPJ: ##.###.###/####-##                       |
+| `maskDocument(value, type)`   | `src/lib/masks.ts`    | Aplica máscara CPF ou CNPJ pelo tipo                   |
+| `maskPhone(value)`            | `src/lib/masks.ts`    | Formata telefone: (##) #####-####                      |
+| `unmask(value)`               | `src/lib/masks.ts`    | Remove formatação, retorna só dígitos                  |
+| `isValidCPF(cpf)`             | `src/lib/masks.ts`    | Valida CPF com dígitos verificadores                   |
+| `isValidCNPJ(cnpj)`           | `src/lib/masks.ts`    | Valida CNPJ com dígitos verificadores                  |
+| `filterUFs(query)`            | `src/lib/locations.ts`| Filtra lista de 27 UFs por sigla ou nome               |
+| `getCitiesByUF(uf)`           | `src/lib/locations.ts`| Busca cidades do IBGE API (com cache em memória)       |
+| `filterCities(cities, query)` | `src/lib/locations.ts`| Filtra cidades por texto digitado                      |
 
 ---
 
@@ -398,16 +410,68 @@ VITE_SUPABASE_ANON_KEY=<chave anon/pública do Supabase>
 | Estilo de exportação               | `export default function` para páginas/componentes        |
 | SPA routing                        | `vercel.json` com rewrite para suporte a rotas client-side|
 | Estado                             | Local com `useState` (sem Redux/Zustand/Context global)   |
-| Build command                      | `tsc -b && vite build`                                    |
+| Build command                      | `tsc -b` seguido de `vite build` (comandos separados)    |
+| Terminal (Shell)                   | **PowerShell** — NÃO usar `&&` para encadear comandos   |
+
+### 12.1 Práticas de Terminal e Deploy
+
+> **⚠️ REGRA CRÍTICA:** O terminal do projeto é **PowerShell (Windows)**. O operador `&&` NÃO funciona neste shell. Sempre rodar comandos **separadamente**, um por vez.
+
+**Git workflow (deploy via Vercel):**
+```powershell
+# Passo 1 — Adicionar arquivos
+git add -A
+
+# Passo 2 — Commit
+git commit -m "descricao da alteracao"
+
+# Passo 3 — Push (dispara deploy automático na Vercel)
+git push
+```
+
+**Build local:**
+```powershell
+# Passo 1 — Type check
+tsc -b
+
+# Passo 2 — Build
+vite build
+```
+
+**Dev server:**
+```powershell
+npm run dev
+```
 
 ---
 
-## 13. Histórico de Alterações
+## 13. Boas Práticas de Teste UI/UX
+
+> Ao fazer alterações visuais, sempre validar no navegador antes de subir para produção.
+
+**Checklist de teste mobile:**
+1. Abrir o dev server local (`npm run dev`)
+2. Usar o Chrome DevTools (F12) → Toggle Device Toolbar (Ctrl+Shift+M)
+3. Testar nos viewports: **390×844** (iPhone 14), **360×800** (Android médio)
+4. Verificar que todo conteúdo da seção cabe na viewport sem corte
+5. Testar navegação, dropdowns e modais no viewport mobile
+6. Testar autocompletes com teclado virtual simulado
+
+**Checklist de formulários:**
+1. Campos de CPF/CNPJ devem usar `maskDocument()` de `src/lib/masks.ts`
+2. Campos de telefone devem usar `maskPhone()` de `src/lib/masks.ts`
+3. Campos de UF/Cidade devem usar autocomplete de `src/lib/locations.ts`
+4. Endereço é armazenado como string única: `"Rua X, 123 - Cidade/UF"`
+
+---
+
+## 14. Histórico de Alterações
 
 | Data       | Alteração                                                              |
 |------------|------------------------------------------------------------------------|
 | 2026-03-05 | Documento criado com análise completa do sistema                       |
 | 2026-03-05 | Planos atualizados: Starter R$79 (30 equip), Professional R$149 (150 equip) |
+| 2026-03-05 | Máscaras CPF/CNPJ/telefone + autocomplete UF/cidade (IBGE API)        |
 
 ---
 
