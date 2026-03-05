@@ -472,6 +472,7 @@ npm run dev
 | 2026-03-05 | Documento criado com análise completa do sistema                       |
 | 2026-03-05 | Planos atualizados: Starter R$79 (30 equip), Professional R$149 (150 equip) |
 | 2026-03-05 | Máscaras CPF/CNPJ/telefone + autocomplete UF/cidade (IBGE API)        |
+| 2026-03-05 | Correção: Nome do técnico salvo no BD e Etiqueta QR 58mm c/ nome da empresa |
 
 ---
 

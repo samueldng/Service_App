@@ -317,6 +317,7 @@ export const serviceOrdersApi = {
             type: order.type,
             status: order.status,
             description: order.description,
+            technician_name: order.technicianName,
             warranty_until: order.warrantyUntil,
             notes: order.notes,
             next_maintenance_date: order.nextMaintenanceDate
@@ -331,7 +332,7 @@ export const serviceOrdersApi = {
         if (payload.equipmentId) { payload.equipment_id = payload.equipmentId; delete payload.equipmentId; }
         if (payload.warrantyUntil) { payload.warranty_until = payload.warrantyUntil; delete payload.warrantyUntil; }
         if (payload.nextMaintenanceDate) { payload.next_maintenance_date = payload.nextMaintenanceDate; delete payload.nextMaintenanceDate; }
-        delete payload.technicianName;
+        if (payload.technicianName !== undefined) { payload.technician_name = payload.technicianName; delete payload.technicianName; }
         delete payload.createdAt;
 
         const { data, error } = await supabase.from('service_orders').update(payload).eq('id', id).select().single();

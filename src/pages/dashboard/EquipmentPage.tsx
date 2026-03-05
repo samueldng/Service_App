@@ -74,34 +74,84 @@ export default function EquipmentPage() {
         if (confirm('Excluir equipamento?')) { await equipmentsApi.delete(id); setEquipments(prev => prev.filter(e => e.id !== id)); setViewing(null); }
     };
 
-    const printQR = (eq: Equipment) => {
-        const client = getClient(eq.clientId);
-        const sector = getSector(eq.sectorId);
+    const printQR = async (eq: Equipment) => {
+        let companyName = 'Empresa Prestadora';
+        try {
+            const org = await import('../../services/api').then(m => m.organizationsApi.get());
+            if (org && org.name) {
+                companyName = org.name;
+            }
+        } catch (e) {
+            console.error('Failed to fetch org name for label', e);
+        }
+
+        // Use a more reliable QR code generator API that returns an image directly
+        // Google Charts API reliably returns a PNG that can be printed
+        const qrUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(getUrl(eq.qrCodeUid))}&choe=UTF-8`;
+
         const win = window.open('', '_blank');
         if (!win) return;
         win.document.write(`
       <!DOCTYPE html>
       <html>
-      <head><title>QR Code - ${eq.qrCodeUid}</title>
-      <style>
-        body { font-family: 'Inter', sans-serif; text-align: center; padding: 20px; }
-        .qr-label { border: 2px dashed #000; padding: 16px; display: inline-block; border-radius: 8px; }
-        .qr-label h3 { margin: 8px 0 4px; font-size: 14px; }
-        .qr-label p { margin: 2px 0; font-size: 11px; color: #333; }
-        .qr-label .uid { font-family: monospace; font-size: 13px; font-weight: bold; margin-top: 8px; }
-      </style></head>
+      <head>
+        <title>Etiqueta QR Code - ${eq.qrCodeUid}</title>
+        <style>
+          @page { margin: 0; size: 58mm auto; }
+          body { 
+            font-family: 'Inter', sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 2mm; 
+            width: 54mm; /* Total 58mm minus padding */
+            color: #000;
+          }
+          .qr-label { 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+          .qr-label h3 { 
+            margin: 0 0 2mm 0; 
+            font-size: 11px; 
+            font-weight: bold;
+            line-height: 1.2;
+            word-wrap: break-word;
+            max-width: 100%;
+          }
+          .qr-image {
+            width: 35mm;
+            height: 35mm;
+            margin-bottom: 2mm;
+          }
+          .company-name { 
+            font-size: 10px; 
+            font-weight: bold; 
+            margin: 0;
+            line-height: 1.2;
+            border-top: 1px dashed #000;
+            padding-top: 2mm;
+            width: 100%;
+          }
+          .uid {
+            font-family: monospace;
+            font-size: 8px;
+            margin-top: 1mm;
+          }
+        </style>
+      </head>
       <body>
         <div class="qr-label">
-          <img src="data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><text x='75' y='75' text-anchor='middle' font-size='60'>📱</text></svg>`)}" width="150"/>
           <h3>${eq.name}</h3>
-          <p>${eq.brand} ${eq.model}</p>
-          <p>${client?.name || ''} - ${sector?.name || ''}</p>
+          <img src="${qrUrl}" class="qr-image" alt="QR Code" onload="window.print(); setTimeout(() => window.close(), 500);" />
+          <div class="company-name">${companyName}</div>
           <div class="uid">${eq.qrCodeUid}</div>
         </div>
-        <script>setTimeout(() => window.print(), 500);</script>
       </body>
       </html>
     `);
+        win.document.close();
     };
 
     return (
