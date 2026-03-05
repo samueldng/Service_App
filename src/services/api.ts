@@ -218,6 +218,43 @@ export const equipmentsApi = {
         if (error) throw error;
         return mapEquipmentFromDb(data) as Equipment;
     },
+    getPublicTrackingData: async (qrCodeUid: string) => {
+        // First try the secure RPC call which bypasses RLS for anonymous users securely
+        const { data, error } = await supabase.rpc('get_public_equipment_data', { qr_uid: qrCodeUid });
+
+        if (error || !data) {
+            console.warn('RPC failed or returned null, falling back to standard API', error);
+            // Fallback to standard fetches (only works fully if user is authenticated due to RLS)
+            const eq = await equipmentsApi.getByQrCode(qrCodeUid);
+            return {
+                equipment: eq,
+                client: null,
+                sector: null,
+                orders: []
+            };
+        }
+
+        const parsed = data as any;
+        return {
+            equipment: mapEquipmentFromDb(parsed.equipment),
+            client: parsed.client ? {
+                id: parsed.client.id, orgId: parsed.client.org_id, name: parsed.client.name,
+                document: parsed.client.document, documentType: parsed.client.document_type,
+                email: parsed.client.email, phone: parsed.client.phone, address: parsed.client.address,
+                createdAt: parsed.client.created_at,
+            } as Client : null,
+            sector: parsed.sector ? {
+                id: parsed.sector.id, clientId: parsed.sector.client_id, name: parsed.sector.name,
+                description: parsed.sector.description, createdAt: parsed.sector.created_at
+            } as Sector : null,
+            orders: (parsed.orders || []).map((d: any) => ({
+                id: d.id, equipmentId: d.equipment_id, technicianName: d.technician_name || 'Técnico',
+                date: d.date, type: d.type, status: d.status, description: d.description,
+                warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date,
+                notes: d.notes, createdAt: d.created_at
+            })) as ServiceOrder[]
+        };
+    },
     create: async (equipment: Omit<Equipment, 'id' | 'qrCodeUid' | 'createdAt'>) => {
         const payload = {
             client_id: equipment.clientId, sector_id: equipment.sectorId,

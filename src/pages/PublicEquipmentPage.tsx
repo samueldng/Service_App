@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle } from 'lucide-react';
-import { equipmentsApi, serviceOrdersApi, clientsApi, sectorsApi } from '../services/api';
+import { equipmentsApi } from '../services/api';
 import type { Equipment, ServiceOrder, Client, Sector } from '../types';
 import './PublicEquipmentPage.css';
 
@@ -19,25 +19,19 @@ export default function PublicEquipmentPage() {
     useEffect(() => {
         if (!qrCodeUid) return;
         const load = async () => {
-            const eq = await equipmentsApi.getByQrCode(qrCodeUid);
-            if (eq) {
-                setEquipment(eq);
-                const [ords, cli, sec] = await Promise.all([
-                    serviceOrdersApi.getByEquipment(eq.id),
-                    clientsApi.getById(eq.clientId),
-                    // sectorsApi.getAll().then(ss => ss.find(s => s.id === eq.sectorId)), // This line was commented out in the instruction, but it's part of the original code. I will keep it as the instruction only specified removing imports and changing getByEquipmentId.
-                    // Re-reading the instruction, the provided "Code Edit" block is a *snippet* of the desired code, not the full file.
-                    // The instruction explicitly states "Remove QRCodeSVG, ArrowLeft, Phone, change getByEquipmentId to getByEquipment".
-                    // It does *not* state to remove Link, QrCode, Cpu, AlertCircle, MessageCircle, ClipboardList, sectorsApi, or Sector type.
-                    // The provided "Code Edit" block in the instruction is misleading if taken as the full desired state for imports/state.
-                    // I will apply only the explicit instructions: remove QRCodeSVG, ArrowLeft, Phone, and change getByEquipmentId.
-                    sectorsApi.getAll().then(ss => ss.find(s => s.id === eq.sectorId)),
-                ]);
-                setOrders(ords);
-                if (cli) setClient(cli);
-                if (sec) setSector(sec);
+            try {
+                const data = await equipmentsApi.getPublicTrackingData(qrCodeUid);
+                if (data.equipment) {
+                    setEquipment(data.equipment);
+                    if (data.client) setClient(data.client);
+                    if (data.sector) setSector(data.sector);
+                    setOrders(data.orders || []);
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados do equipamento:", err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         load();
     }, [qrCodeUid]);
