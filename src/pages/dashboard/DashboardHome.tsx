@@ -6,22 +6,6 @@ import { clientsApi, equipmentsApi, serviceOrdersApi } from '../../services/api'
 import type { Client, Equipment, ServiceOrder } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
-const monthlyData = [
-    { name: 'Set', preventivas: 12, corretivas: 4 },
-    { name: 'Out', preventivas: 15, corretivas: 6 },
-    { name: 'Nov', preventivas: 18, corretivas: 3 },
-    { name: 'Dez', preventivas: 14, corretivas: 5 },
-    { name: 'Jan', preventivas: 20, corretivas: 7 },
-    { name: 'Fev', preventivas: 16, corretivas: 4 },
-    { name: 'Mar', preventivas: 8, corretivas: 2 },
-];
-
-const statusData = [
-    { name: 'Concluídas', value: 65, color: '#34d399' },
-    { name: 'Em Progresso', value: 25, color: '#fbbf24' },
-    { name: 'Abertas', value: 10, color: '#6366f1' },
-];
-
 const container = {
     hidden: {},
     visible: { transition: { staggerChildren: 0.1 } },
@@ -46,6 +30,56 @@ export default function DashboardHome() {
     const warrantyActive = orders.filter(o =>
         o.warrantyUntil && new Date(o.warrantyUntil) > new Date()
     ).length;
+
+    // Calculate Status Data
+    const counts = { abertas: 0, em_progresso: 0, concluidas: 0 };
+    orders.forEach(o => {
+        if (o.status === 'aberta') counts.abertas++;
+        else if (o.status === 'em_progresso') counts.em_progresso++;
+        else if (o.status === 'concluida') counts.concluidas++;
+    });
+
+    const totalOrders = orders.length || 1; // prevent division by zero
+
+    const statusData = [
+        { name: 'Concluídas', value: Math.round((counts.concluidas / totalOrders) * 100) || 0, color: '#34d399' },
+        { name: 'Em Progresso', value: Math.round((counts.em_progresso / totalOrders) * 100) || 0, color: '#fbbf24' },
+        { name: 'Abertas', value: Math.round((counts.abertas / totalOrders) * 100) || 0, color: '#6366f1' },
+    ];
+
+    // Calculate Monthly Data
+    const getMonthName = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleString('pt-BR', { month: 'short' }).replace('.', '');
+    };
+
+    const monthMap = new Map<string, { name: string, preventivas: number, corretivas: number }>();
+
+    // Create an empty map for the last 6 months + current month to ensure graph continuity
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const name = getMonthName(d.toISOString());
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        monthMap.set(key, { name: name.charAt(0).toUpperCase() + name.slice(1), preventivas: 0, corretivas: 0 });
+    }
+
+    orders.forEach(o => {
+        if (!o.date) return;
+        const d = new Date(o.date);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+
+        if (monthMap.has(key)) {
+            const data = monthMap.get(key)!;
+            if (o.type === 'preventiva') data.preventivas++;
+            if (o.type === 'corretiva') data.corretivas++;
+        } else {
+            // For dates outside our 7 month window, we either ignore or dynamically expand
+            // Standard dashboard design usually shows a fixed window, so we'll stick to the pre-filled map
+        }
+    });
+
+    const monthlyData = Array.from(monthMap.values());
 
     const stats = [
         { icon: Users, label: 'Clientes', value: clients.length, trend: '+12%', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.12)' },

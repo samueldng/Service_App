@@ -12,7 +12,7 @@ export default function ServiceOrdersPage() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<string>('all');
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianName: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianName: 'Carlos Mendes' });
+    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianName: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
 
     useEffect(() => {
         serviceOrdersApi.getAll().then(setOrders);
@@ -43,6 +43,7 @@ export default function ServiceOrdersPage() {
             date: new Date().toISOString().split('T')[0],
             status: 'aberta',
             createdAt: new Date().toISOString().split('T')[0],
+            ...(form.warrantyUntil ? { warrantyUntil: form.warrantyUntil } : {})
         };
         await serviceOrdersApi.create(newOrder);
         setOrders(prev => [...prev, newOrder]);
@@ -68,7 +69,7 @@ export default function ServiceOrdersPage() {
                 <button className="btn btn-primary" onClick={() => {
                     const firstClient = clients[0]?.id || '';
                     const firstEq = equipments.find(e => e.clientId === firstClient)?.id || '';
-                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianName: 'Carlos Mendes' });
+                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
                     setShowModal(true);
                 }}>
                     <Plus size={18} /> Nova OS
@@ -209,6 +210,11 @@ export default function ServiceOrdersPage() {
                                 <div className="form-group">
                                     <label className="form-label">Técnico</label>
                                     <input className="form-input" value={form.technicianName} onChange={e => setForm(p => ({ ...p, technicianName: e.target.value }))} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Data de Garantia (Opcional)</label>
+                                    <input className="form-input" type="date" value={form.warrantyUntil} onChange={e => setForm(p => ({ ...p, warrantyUntil: e.target.value }))} />
+                                    <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>Se preenchido, o equipamento constará como "Garantia Ativa" no Dashboard até esta data.</p>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Descrição</label>
