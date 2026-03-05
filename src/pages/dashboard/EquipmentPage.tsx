@@ -87,8 +87,17 @@ export default function EquipmentPage() {
             console.error('Failed to fetch org name for label', e);
         }
 
-        // Use a more reliable QR code generator API that returns an image directly
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getUrl(eq.qrCodeUid))}`;
+        // Extrai o SVG do QR Code direto da tela atual, sem depender de APIs externas
+        const svgElement = document.querySelector('.details-grid svg') as SVGSVGElement | null;
+        let qrImgSrc = '';
+        if (svgElement) {
+            const svgString = new XMLSerializer().serializeToString(svgElement);
+            const finalSvg = svgString.includes('xmlns') ? svgString : svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            qrImgSrc = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(finalSvg)))}`;
+        } else {
+            // Fallback
+            qrImgSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getUrl(eq.qrCodeUid))}`;
+        }
 
         const win = window.open('', '_blank');
         if (!win) return;
@@ -145,7 +154,7 @@ export default function EquipmentPage() {
       <body>
         <div class="qr-label">
           <h3>${eq.name}</h3>
-          <img src="${qrUrl}" class="qr-image" alt="QR Code" onload="window.print(); setTimeout(() => window.close(), 500);" onerror="window.print(); setTimeout(() => window.close(), 500);" />
+          <img src="${qrImgSrc}" class="qr-image" alt="QR Code" onload="setTimeout(() => window.print(), 200);" onerror="setTimeout(() => window.print(), 200);" />
           <div class="company-name">${companyName}</div>
           ${companyPhone ? `<div class="company-phone">${companyPhone}</div>` : ''}
         </div>
