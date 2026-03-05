@@ -76,18 +76,19 @@ export default function EquipmentPage() {
 
     const printQR = async (eq: Equipment) => {
         let companyName = 'Empresa Prestadora';
+        let companyPhone = '';
         try {
             const org = await import('../../services/api').then(m => m.organizationsApi.get());
             if (org && org.name) {
                 companyName = org.name;
+                companyPhone = org.phone || '';
             }
         } catch (e) {
             console.error('Failed to fetch org name for label', e);
         }
 
         // Use a more reliable QR code generator API that returns an image directly
-        // Google Charts API reliably returns a PNG that can be printed
-        const qrUrl = `https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(getUrl(eq.qrCodeUid))}&choe=UTF-8`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getUrl(eq.qrCodeUid))}`;
 
         const win = window.open('', '_blank');
         if (!win) return;
@@ -134,19 +135,19 @@ export default function EquipmentPage() {
             padding-top: 2mm;
             width: 100%;
           }
-          .uid {
-            font-family: monospace;
-            font-size: 8px;
-            margin-top: 1mm;
+          .company-phone {
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 0.5mm;
           }
         </style>
       </head>
       <body>
         <div class="qr-label">
           <h3>${eq.name}</h3>
-          <img src="${qrUrl}" class="qr-image" alt="QR Code" onload="window.print(); setTimeout(() => window.close(), 500);" />
+          <img src="${qrUrl}" class="qr-image" alt="QR Code" onload="window.print(); setTimeout(() => window.close(), 500);" onerror="window.print(); setTimeout(() => window.close(), 500);" />
           <div class="company-name">${companyName}</div>
-          <div class="uid">${eq.qrCodeUid}</div>
+          ${companyPhone ? `<div class="company-phone">${companyPhone}</div>` : ''}
         </div>
       </body>
       </html>
