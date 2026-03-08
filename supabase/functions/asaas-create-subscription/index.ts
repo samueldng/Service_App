@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ASAAS_API_URL = "https://api.asaas.com/v3"; // Use https://sandbox.asaas.com/api/v3 for sandbox
+const ASAAS_API_URL = "https://sandbox.asaas.com/api/v3"; // Sandbox mode — trocar para https://api.asaas.com/v3 em produção
 
 const PLAN_VALUES: Record<string, number> = {
   starter: 59,
