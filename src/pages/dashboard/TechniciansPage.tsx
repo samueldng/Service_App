@@ -119,7 +119,8 @@ export default function TechniciansPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Tem certeza que deseja remover este técnico?')) return;
-        const { error } = await supabase.from('users').delete().eq('id', id);
+        // Use RPC to delete from both auth.users and public.users
+        const { error } = await supabase.rpc('delete_technician', { tech_user_id: id });
         if (error) {
             toast.error('Erro ao remover: ' + error.message);
             return;
