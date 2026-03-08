@@ -26,6 +26,7 @@ export default function DashboardLayout() {
     const [user, setUser] = useState<User | null>(null);
     const [organization, setOrganization] = useState<Organization | null>(null);
     const [loading, setLoading] = useState(true);
+    const [blocked, setBlocked] = useState<'trial_expired' | 'past_due' | 'canceled' | null>(null);
     const navigate = useNavigate();
     const location = useLocation();
 
