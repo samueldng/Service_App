@@ -321,7 +321,7 @@ export const serviceOrdersApi = {
             type: order.type,
             status: order.status,
             description: order.description,
-            technician_name: order.technicianName,
+            technician_id: order.technicianId || null,
             warranty_until: order.warrantyUntil,
             notes: order.notes,
             next_maintenance_date: order.nextMaintenanceDate,
