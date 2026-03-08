@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown } from 'lucide-react';
+import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown, FileText } from 'lucide-react';
 import { authApi } from '../services/api';
 import './LoginPage.css';
 
