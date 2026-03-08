@@ -313,7 +313,7 @@ export const serviceOrdersApi = {
         return (data || []).map(mapServiceOrderFromDb) as ServiceOrder[];
     },
     create: async (order: Omit<ServiceOrder, 'id' | 'createdAt'>) => {
-        const payload = {
+        const payload: any = {
             equipment_id: order.equipmentId,
             date: order.date,
             type: order.type,
@@ -322,8 +322,10 @@ export const serviceOrdersApi = {
             technician_name: order.technicianName,
             warranty_until: order.warrantyUntil,
             notes: order.notes,
-            next_maintenance_date: order.nextMaintenanceDate
+            next_maintenance_date: order.nextMaintenanceDate,
         };
+        if (order.photosBefore && order.photosBefore.length > 0) payload.photos_before = order.photosBefore;
+        if (order.photosAfter && order.photosAfter.length > 0) payload.photos_after = order.photosAfter;
 
         const { data, error } = await supabase.from('service_orders').insert([payload]).select().single();
         if (error) throw error;
