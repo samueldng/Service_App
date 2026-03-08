@@ -248,7 +248,8 @@ export const equipmentsApi = {
                 description: parsed.sector.description, createdAt: parsed.sector.created_at
             } as Sector : null,
             orders: (parsed.orders || []).map((d: any) => ({
-                id: d.id, equipmentId: d.equipment_id, technicianName: d.technician_name || 'Técnico',
+                id: d.id, equipmentId: d.equipment_id, technicianId: d.technician_id,
+                technicianName: d.technician_name || '',
                 date: d.date, type: d.type, status: d.status, description: d.description,
                 warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date,
                 notes: d.notes, photosBefore: d.photos_before || [], photosAfter: d.photos_after || [],
