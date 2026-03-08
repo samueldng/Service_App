@@ -18,6 +18,8 @@ function mapOrgFromDb(d: any): Organization {
         email: d.email, phone: d.phone, createdAt: d.created_at,
         logoUrl: d.logo_url, brandColor: d.brand_color,
         subscriptionPlan: d.subscription_plan, paymentStatus: d.payment_status,
+        trialEndsAt: d.trial_ends_at, maxEquipments: d.max_equipments,
+        asaasCustomerId: d.asaas_customer_id, asaasSubscriptionId: d.asaas_subscription_id,
     };
 }
 
@@ -44,20 +46,30 @@ export const authApi = {
         return data;
     },
     register: async (email: string, password: string, name: string, company: string, plan?: string) => {
+        const selectedPlan = plan || 'starter';
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { full_name: name, company: company, plan: plan || 'starter' }
+                data: { full_name: name, company: company, plan: selectedPlan }
             }
         });
         if (error) throw error;
 
         // Only call RPC if user session is immediately available (no email confirmation required)
         if (data.session) {
-            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company, plan_name: plan || 'starter' });
+            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company, plan_name: selectedPlan });
             if (rpcError) {
                 console.error('Tenant creation error:', rpcError);
+            }
+
+            // Create Asaas customer and subscription
+            try {
+                await supabase.functions.invoke('asaas-create-subscription', {
+                    body: { name, email, plan: selectedPlan },
+                });
+            } catch (asaasErr) {
+                console.error('Asaas subscription error:', asaasErr);
             }
         }
 

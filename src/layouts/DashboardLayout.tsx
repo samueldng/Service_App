@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { authApi, organizationsApi } from '../services/api';
 import type { Organization, User } from '../types';
+import PaymentBlockedPage from '../pages/PaymentBlockedPage';
 import './DashboardLayout.css';
 
 const menuItems = [
@@ -25,6 +26,7 @@ export default function DashboardLayout() {
     const [user, setUser] = useState<User | null>(null);
     const [organization, setOrganization] = useState<Organization | null>(null);
     const [loading, setLoading] = useState(true);
+    const [blocked, setBlocked] = useState<'trial_expired' | 'past_due' | 'canceled' | null>(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -44,6 +46,20 @@ export default function DashboardLayout() {
                     document.documentElement.style.setProperty('--color-primary', org.brandColor);
                     document.documentElement.style.setProperty('--color-accent-primary', org.brandColor);
                 }
+
+                // Check trial/payment status
+                if (org) {
+                    if (org.paymentStatus === 'past_due') {
+                        setBlocked('past_due');
+                    } else if (org.paymentStatus === 'canceled') {
+                        setBlocked('canceled');
+                    } else if (org.trialEndsAt) {
+                        const trialEnd = new Date(org.trialEndsAt);
+                        if (trialEnd < new Date() && org.paymentStatus !== 'active') {
+                            setBlocked('trial_expired');
+                        }
+                    }
+                }
             } catch (error) {
                 console.error("Session error:", error);
                 navigate('/login');
@@ -60,7 +76,11 @@ export default function DashboardLayout() {
     };
 
     if (loading) {
-        return (
+    if (blocked && organization) {
+        return <PaymentBlockedPage organization={organization} reason={blocked} />;
+    }
+
+    return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
                 <Loader2 size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
             </div>
