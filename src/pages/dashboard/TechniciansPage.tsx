@@ -99,11 +99,12 @@ export default function TechniciansPage() {
             if (updateError) {
                 console.error('Profile update error:', updateError);
                 // Try via RPC as fallback
-                await supabase.rpc('assign_technician_org', {
+                const rpcResult = await supabase.rpc('assign_technician_org', {
                     tech_user_id: signUpData.user.id,
                     org_id_param: profile.org_id,
                     tech_name: form.name
-                }).catch(() => {});
+                });
+                if (rpcResult.error) console.error('RPC fallback error:', rpcResult.error);
             }
 
             setCreatedCredentials({ email: form.email, password: form.password });
