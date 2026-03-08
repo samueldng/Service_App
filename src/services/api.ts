@@ -66,7 +66,7 @@ export const authApi = {
             // Create Asaas customer and subscription
             try {
                 await supabase.functions.invoke('asaas-create-subscription', {
-                    body: { name, email, plan: selectedPlan },
+                    body: { name, email, plan: selectedPlan, cpfCnpj },
                 });
             } catch (asaasErr) {
                 console.error('Asaas subscription error:', asaasErr);
