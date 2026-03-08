@@ -18,6 +18,8 @@ function mapOrgFromDb(d: any): Organization {
         email: d.email, phone: d.phone, createdAt: d.created_at,
         logoUrl: d.logo_url, brandColor: d.brand_color,
         subscriptionPlan: d.subscription_plan, paymentStatus: d.payment_status,
+        trialEndsAt: d.trial_ends_at, maxEquipments: d.max_equipments,
+        asaasCustomerId: d.asaas_customer_id, asaasSubscriptionId: d.asaas_subscription_id,
     };
 }
 

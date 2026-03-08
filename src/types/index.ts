@@ -9,6 +9,10 @@ export interface Organization {
   brandColor?: string; // Hex color
   subscriptionPlan: 'free' | 'starter' | 'pro' | 'professional' | 'enterprise';
   paymentStatus: 'active' | 'past_due' | 'canceled';
+  trialEndsAt?: string;
+  maxEquipments?: number;
+  asaasCustomerId?: string;
+  asaasSubscriptionId?: string;
 }
 
 export interface Client {
