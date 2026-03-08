@@ -24,13 +24,24 @@ export default function ServiceOrdersPage() {
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
     const [showPhotoModal, setShowPhotoModal] = useState<{ orderId: string; type: 'before' | 'after' } | null>(null);
     const [addingPhotos, setAddingPhotos] = useState<string[]>([]);
-    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianName: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
+    const [techniciansList, setTechniciansList] = useState<TechnicianOption[]>([]);
+    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianId: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianId: '', warrantyUntil: '' });
 
     useEffect(() => {
         serviceOrdersApi.getAll().then(setOrders);
         equipmentsApi.getAll().then(setEquipments);
         clientsApi.getAll().then(setClients);
+        loadTechnicians();
     }, []);
+
+    const loadTechnicians = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).maybeSingle();
+        if (!profile?.org_id) return;
+        const { data } = await supabase.from('users').select('id, name').eq('org_id', profile.org_id).eq('role', 'technician').order('name');
+        setTechniciansList((data || []).map(d => ({ id: d.id, name: d.name })));
+    };
 
     const getEquipment = (id: string) => equipments.find(e => e.id === id);
 
