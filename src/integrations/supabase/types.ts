@@ -14,13 +14,305 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          document: string
+          document_type: string | null
+          email: string | null
+          id: string
+          name: string
+          org_id: string | null
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          document: string
+          document_type?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          org_id?: string | null
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          document?: string
+          document_type?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          org_id?: string | null
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipments: {
+        Row: {
+          brand: string
+          btus: number | null
+          client_id: string | null
+          created_at: string | null
+          details: string | null
+          id: string
+          install_date: string | null
+          model: string
+          name: string
+          qr_code_uid: string | null
+          sector_id: string | null
+          serial_number: string | null
+          status: string | null
+        }
+        Insert: {
+          brand: string
+          btus?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          install_date?: string | null
+          model: string
+          name: string
+          qr_code_uid?: string | null
+          sector_id?: string | null
+          serial_number?: string | null
+          status?: string | null
+        }
+        Update: {
+          brand?: string
+          btus?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          install_date?: string | null
+          model?: string
+          name?: string
+          qr_code_uid?: string | null
+          sector_id?: string | null
+          serial_number?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipments_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
+          brand_color: string | null
+          created_at: string | null
+          document: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          max_equipments: number | null
+          name: string
+          payment_status: string | null
+          phone: string | null
+          subscription_plan: string | null
+          trial_ends_at: string | null
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          brand_color?: string | null
+          created_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          max_equipments?: number | null
+          name: string
+          payment_status?: string | null
+          phone?: string | null
+          subscription_plan?: string | null
+          trial_ends_at?: string | null
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          brand_color?: string | null
+          created_at?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          max_equipments?: number | null
+          name?: string
+          payment_status?: string | null
+          phone?: string | null
+          subscription_plan?: string | null
+          trial_ends_at?: string | null
+        }
+        Relationships: []
+      }
+      sectors: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sectors_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_orders: {
+        Row: {
+          created_at: string | null
+          date: string
+          description: string
+          equipment_id: string | null
+          id: string
+          next_maintenance_date: string | null
+          notes: string | null
+          photos_after: string[] | null
+          photos_before: string[] | null
+          status: string | null
+          technician_id: string | null
+          type: string
+          warranty_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          description: string
+          equipment_id?: string | null
+          id?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          photos_after?: string[] | null
+          photos_before?: string[] | null
+          status?: string | null
+          technician_id?: string | null
+          type: string
+          warranty_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          description?: string
+          equipment_id?: string | null
+          id?: string
+          next_maintenance_date?: string | null
+          notes?: string | null
+          photos_after?: string[] | null
+          photos_before?: string[] | null
+          status?: string | null
+          technician_id?: string | null
+          type?: string
+          warranty_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_orders_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string
+          name: string
+          org_id: string | null
+          role: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id: string
+          name: string
+          org_id?: string | null
+          role?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          org_id?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      auth_org_id: { Args: never; Returns: string }
+      create_tenant_from_auth: {
+        Args: { org_name: string; plan_name?: string }
+        Returns: string
+      }
+      get_public_equipment_data: { Args: { qr_uid: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
