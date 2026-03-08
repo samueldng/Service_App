@@ -5,7 +5,6 @@ import {
     ClipboardList, Camera, CheckCircle2, LogOut, Loader2, ChevronDown, ChevronUp,
     Wrench, Calendar, Building, QrCode, Send
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { serviceOrdersApi, equipmentsApi, clientsApi, authApi } from '../services/api';
 import type { ServiceOrder, Equipment, Client, User } from '../types';
 import PhotoCapture from '../components/PhotoCapture';

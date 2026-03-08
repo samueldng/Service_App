@@ -73,7 +73,7 @@ export default function TechniciansPage() {
 
             // Create the technician via Supabase Admin RPC or direct signup
             // We use a custom RPC to create tech users within the same org
-            const { data, error } = await supabase.rpc('create_technician', {
+            const { error } = await supabase.rpc('create_technician', {
                 tech_name: form.name,
                 tech_email: form.email,
                 tech_password: form.password,

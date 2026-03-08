@@ -78,7 +78,7 @@ export default function ServiceOrdersPage() {
         setAddingPhotos([]);
     };
 
-    const statusLabels = { aberta: 'Aberta', em_progresso: 'Em Progresso', concluida: 'Concluída' };
+    const statusLabels: Record<string, string> = { aberta: 'Aberta', em_progresso: 'Em Progresso', aguardando_aprovacao: 'Aguardando Aprovação', concluida: 'Concluída' };
     const typeLabels = { preventiva: 'Preventiva', corretiva: 'Corretiva', instalacao: 'Instalação' };
     const typeColors = { preventiva: '#6366f1', corretiva: '#fb7185', instalacao: '#22d3ee' };
 
