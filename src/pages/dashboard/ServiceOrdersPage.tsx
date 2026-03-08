@@ -210,10 +210,16 @@ export default function ServiceOrdersPage() {
                                                 <Camera size={14} /> Fotos Depois
                                             </button>
                                         )}
-                                        <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : 'badge-primary'}`}>
+                                        <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : order.status === 'aguardando_aprovacao' ? 'badge-info' : 'badge-primary'}`}>
                                             {statusLabels[order.status]}
                                         </span>
-                                        {order.status !== 'concluida' && (
+                                        {order.status === 'aguardando_aprovacao' && (
+                                            <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
+                                                onClick={() => updateStatus(order.id, 'concluida')}>
+                                                ✅ Aprovar
+                                            </button>
+                                        )}
+                                        {order.status !== 'concluida' && order.status !== 'aguardando_aprovacao' && (
                                             <select
                                                 className="form-input"
                                                 value={order.status}
@@ -222,6 +228,7 @@ export default function ServiceOrdersPage() {
                                             >
                                                 <option value="aberta">Aberta</option>
                                                 <option value="em_progresso">Em Progresso</option>
+                                                <option value="aguardando_aprovacao">Aguardando Aprovação</option>
                                                 <option value="concluida">Concluída</option>
                                             </select>
                                         )}

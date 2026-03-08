@@ -9,8 +9,10 @@ import SectorsPage from './pages/dashboard/SectorsPage';
 import EquipmentPage from './pages/dashboard/EquipmentPage';
 import ServiceOrdersPage from './pages/dashboard/ServiceOrdersPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
+import TechniciansPage from './pages/dashboard/TechniciansPage';
 import PublicEquipmentPage from './pages/PublicEquipmentPage';
 import ClientPortalPage from './pages/ClientPortalPage';
+import TechnicianPortalPage from './pages/TechnicianPortalPage';
 
 export default function App() {
   return (
@@ -21,12 +23,14 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/e/:qrCodeUid" element={<PublicEquipmentPage />} />
         <Route path="/portal/:clientId" element={<ClientPortalPage />} />
+        <Route path="/tecnico" element={<TechnicianPortalPage />} />
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardHome />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="sectors" element={<SectorsPage />} />
           <Route path="equipment" element={<EquipmentPage />} />
           <Route path="service-orders" element={<ServiceOrdersPage />} />
+          <Route path="technicians" element={<TechniciansPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
