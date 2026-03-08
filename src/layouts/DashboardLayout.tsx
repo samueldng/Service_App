@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, MapPin, Cpu, ClipboardList,
-    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings, Loader2
+    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings, Loader2, UserCog
 } from 'lucide-react';
 import { authApi, organizationsApi } from '../services/api';
 import type { Organization, User } from '../types';
@@ -15,6 +15,7 @@ const menuItems = [
     { path: '/dashboard/sectors', icon: MapPin, label: 'Setores', end: false },
     { path: '/dashboard/equipment', icon: Cpu, label: 'Equipamentos', end: false },
     { path: '/dashboard/service-orders', icon: ClipboardList, label: 'Ordens de Serviço', end: false },
+    { path: '/dashboard/technicians', icon: UserCog, label: 'Técnicos', end: false },
     { path: '/dashboard/settings', icon: Settings, label: 'Configurações', end: false },
 ];
 

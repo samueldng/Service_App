@@ -78,7 +78,7 @@ export default function ServiceOrdersPage() {
         setAddingPhotos([]);
     };
 
-    const statusLabels = { aberta: 'Aberta', em_progresso: 'Em Progresso', concluida: 'Concluída' };
+    const statusLabels: Record<string, string> = { aberta: 'Aberta', em_progresso: 'Em Progresso', aguardando_aprovacao: 'Aguardando Aprovação', concluida: 'Concluída' };
     const typeLabels = { preventiva: 'Preventiva', corretiva: 'Corretiva', instalacao: 'Instalação' };
     const typeColors = { preventiva: '#6366f1', corretiva: '#fb7185', instalacao: '#22d3ee' };
 
@@ -128,9 +128,9 @@ export default function ServiceOrdersPage() {
 
             <div className="glass-card" style={{ padding: 'var(--space-6)' }}>
                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-                    {['all', 'aberta', 'em_progresso', 'concluida'].map(f => (
+                    {['all', 'aberta', 'em_progresso', 'aguardando_aprovacao', 'concluida'].map(f => (
                         <button key={f} className={`btn ${filter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setFilter(f)} style={{ fontSize: 'var(--text-xs)' }}>
-                            {f === 'all' ? 'Todas' : statusLabels[f as keyof typeof statusLabels]}
+                            {f === 'all' ? 'Todas' : (statusLabels as any)[f]}
                         </button>
                     ))}
                 </div>
@@ -210,10 +210,16 @@ export default function ServiceOrdersPage() {
                                                 <Camera size={14} /> Fotos Depois
                                             </button>
                                         )}
-                                        <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : 'badge-primary'}`}>
+                                        <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : order.status === 'aguardando_aprovacao' ? 'badge-info' : 'badge-primary'}`}>
                                             {statusLabels[order.status]}
                                         </span>
-                                        {order.status !== 'concluida' && (
+                                        {order.status === 'aguardando_aprovacao' && (
+                                            <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
+                                                onClick={() => updateStatus(order.id, 'concluida')}>
+                                                ✅ Aprovar
+                                            </button>
+                                        )}
+                                        {order.status !== 'concluida' && order.status !== 'aguardando_aprovacao' && (
                                             <select
                                                 className="form-input"
                                                 value={order.status}
@@ -222,6 +228,7 @@ export default function ServiceOrdersPage() {
                                             >
                                                 <option value="aberta">Aberta</option>
                                                 <option value="em_progresso">Em Progresso</option>
+                                                <option value="aguardando_aprovacao">Aguardando Aprovação</option>
                                                 <option value="concluida">Concluída</option>
                                             </select>
                                         )}

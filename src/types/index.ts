@@ -52,9 +52,10 @@ export interface ServiceOrder {
   equipmentId: string;
   date: string;
   type: 'preventiva' | 'corretiva' | 'instalacao';
-  status: 'aberta' | 'em_progresso' | 'concluida';
+  status: 'aberta' | 'em_progresso' | 'aguardando_aprovacao' | 'concluida';
   description: string;
   technicianName: string;
+  technicianId?: string;
   warrantyUntil?: string;
   notes?: string;
   photos?: string[];
