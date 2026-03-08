@@ -23,7 +23,7 @@ interface Props {
 }
 
 export default function PaymentBlockedPage({ organization, reason }: Props) {
-    const navigate = useNavigate();
+    
     const [loading, setLoading] = useState(false);
     const plan = organization.subscriptionPlan || 'starter';
 
