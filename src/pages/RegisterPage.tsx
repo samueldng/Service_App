@@ -29,7 +29,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan);
+            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan, formData.cpfCnpj);
             navigate('/dashboard');
         } catch (error: any) {
             alert('Erro ao criar conta: ' + error.message);
