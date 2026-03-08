@@ -54,18 +54,23 @@ export default function ServiceOrdersPage() {
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    const getTechnicianName = (techId?: string) => {
+        if (!techId) return 'Não atribuído';
+        const tech = techniciansList.find(t => t.id === techId);
+        return tech?.name || 'Técnico';
+    };
+
     const handleCreate = async () => {
         if (!form.equipmentId) return;
 
-        const newOrder: ServiceOrder = {
-            id: `os-${uuidv4().slice(0, 8)}`,
+        const newOrder: Omit<ServiceOrder, 'id' | 'createdAt'> = {
             equipmentId: form.equipmentId,
             type: form.type,
             description: form.description,
-            technicianName: form.technicianName,
+            technicianName: form.technicianId ? getTechnicianName(form.technicianId) : '',
+            technicianId: form.technicianId || undefined,
             date: new Date().toISOString().split('T')[0],
             status: 'aberta',
-            createdAt: new Date().toISOString().split('T')[0],
             photosBefore: photosBefore.length > 0 ? photosBefore : undefined,
             photosAfter: photosAfter.length > 0 ? photosAfter : undefined,
             ...(form.warrantyUntil ? { warrantyUntil: form.warrantyUntil } : {})
