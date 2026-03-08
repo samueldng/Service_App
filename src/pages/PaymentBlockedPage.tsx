@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { motion } from 'framer-motion';
 import { AlertTriangle, CreditCard, Crown } from 'lucide-react';
 import type { Organization } from '../types';
 import './LoginPage.css';
