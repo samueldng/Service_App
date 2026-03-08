@@ -251,7 +251,8 @@ export const equipmentsApi = {
                 id: d.id, equipmentId: d.equipment_id, technicianName: d.technician_name || 'Técnico',
                 date: d.date, type: d.type, status: d.status, description: d.description,
                 warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date,
-                notes: d.notes, createdAt: d.created_at
+                notes: d.notes, photosBefore: d.photos_before || [], photosAfter: d.photos_after || [],
+                createdAt: d.created_at
             })) as ServiceOrder[]
         };
     },

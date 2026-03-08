@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle } from 'lucide-react';
+import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle, Camera, X } from 'lucide-react';
 import { equipmentsApi } from '../services/api';
 import type { Equipment, ServiceOrder, Client, Sector } from '../types';
 import './PublicEquipmentPage.css';
