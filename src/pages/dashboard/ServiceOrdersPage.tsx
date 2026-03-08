@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog } from 'lucide-react';
 import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import type { ServiceOrder, Equipment, Client } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
 import PhotoCapture from '../../components/PhotoCapture';
+
+interface TechnicianOption {
+    id: string;
+    name: string;
+}
 
 export default function ServiceOrdersPage() {
     const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -18,13 +23,24 @@ export default function ServiceOrdersPage() {
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
     const [showPhotoModal, setShowPhotoModal] = useState<{ orderId: string; type: 'before' | 'after' } | null>(null);
     const [addingPhotos, setAddingPhotos] = useState<string[]>([]);
-    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianName: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
+    const [techniciansList, setTechniciansList] = useState<TechnicianOption[]>([]);
+    const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianId: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianId: '', warrantyUntil: '' });
 
     useEffect(() => {
         serviceOrdersApi.getAll().then(setOrders);
         equipmentsApi.getAll().then(setEquipments);
         clientsApi.getAll().then(setClients);
+        loadTechnicians();
     }, []);
+
+    const loadTechnicians = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).maybeSingle();
+        if (!profile?.org_id) return;
+        const { data } = await supabase.from('users').select('id, name').eq('org_id', profile.org_id).eq('role', 'technician').order('name');
+        setTechniciansList((data || []).map(d => ({ id: d.id, name: d.name })));
+    };
 
     const getEquipment = (id: string) => equipments.find(e => e.id === id);
 
@@ -37,18 +53,23 @@ export default function ServiceOrdersPage() {
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+    const getTechnicianName = (techId?: string) => {
+        if (!techId) return 'Não atribuído';
+        const tech = techniciansList.find(t => t.id === techId);
+        return tech?.name || 'Técnico';
+    };
+
     const handleCreate = async () => {
         if (!form.equipmentId) return;
 
-        const newOrder: ServiceOrder = {
-            id: `os-${uuidv4().slice(0, 8)}`,
+        const newOrder: Omit<ServiceOrder, 'id' | 'createdAt'> = {
             equipmentId: form.equipmentId,
             type: form.type,
             description: form.description,
-            technicianName: form.technicianName,
+            technicianName: form.technicianId ? getTechnicianName(form.technicianId) : '',
+            technicianId: form.technicianId || undefined,
             date: new Date().toISOString().split('T')[0],
             status: 'aberta',
-            createdAt: new Date().toISOString().split('T')[0],
             photosBefore: photosBefore.length > 0 ? photosBefore : undefined,
             photosAfter: photosAfter.length > 0 ? photosAfter : undefined,
             ...(form.warrantyUntil ? { warrantyUntil: form.warrantyUntil } : {})
@@ -117,7 +138,7 @@ export default function ServiceOrdersPage() {
                 <button className="btn btn-primary" onClick={() => {
                     const firstClient = clients[0]?.id || '';
                     const firstEq = equipments.find(e => e.clientId === firstClient)?.id || '';
-                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
+                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianId: '', warrantyUntil: '' });
                     setPhotosBefore([]);
                     setPhotosAfter([]);
                     setShowModal(true);
@@ -184,7 +205,7 @@ export default function ServiceOrdersPage() {
                                                     <Calendar size={12} />
                                                     {new Date(order.date).toLocaleDateString('pt-BR')}
                                                 </span>
-                                                <span>{order.technicianName}</span>
+                                                <span>{getTechnicianName(order.technicianId)}</span>
                                                 {order.nextMaintenanceDate && (
                                                     <span>Próxima: {new Date(order.nextMaintenanceDate).toLocaleDateString('pt-BR')}</span>
                                                 )}
@@ -328,8 +349,22 @@ export default function ServiceOrdersPage() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Técnico</label>
-                                    <input className="form-input" value={form.technicianName} onChange={e => setForm(p => ({ ...p, technicianName: e.target.value }))} />
+                                    <label className="form-label">Técnico (Opcional)</label>
+                                    <select
+                                        className="form-input"
+                                        value={form.technicianId}
+                                        onChange={e => setForm(p => ({ ...p, technicianId: e.target.value }))}
+                                    >
+                                        <option value="">Sem técnico atribuído</option>
+                                        {techniciansList.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                    {techniciansList.length === 0 && (
+                                        <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <UserCog size={12} /> Nenhum técnico cadastrado. Cadastre em Técnicos.
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Data de Garantia (Opcional)</label>

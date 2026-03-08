@@ -248,7 +248,8 @@ export const equipmentsApi = {
                 description: parsed.sector.description, createdAt: parsed.sector.created_at
             } as Sector : null,
             orders: (parsed.orders || []).map((d: any) => ({
-                id: d.id, equipmentId: d.equipment_id, technicianName: d.technician_name || 'Técnico',
+                id: d.id, equipmentId: d.equipment_id, technicianId: d.technician_id,
+                technicianName: d.technician_name || '',
                 date: d.date, type: d.type, status: d.status, description: d.description,
                 warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date,
                 notes: d.notes, photosBefore: d.photos_before || [], photosAfter: d.photos_after || [],
@@ -293,7 +294,8 @@ function mapServiceOrderFromDb(d: any): ServiceOrder {
     return {
         ...d,
         equipmentId: d.equipment_id,
-        technicianName: d.technician_name || 'Técnico',
+        technicianId: d.technician_id,
+        technicianName: d.technician_name || '',
         warrantyUntil: d.warranty_until,
         nextMaintenanceDate: d.next_maintenance_date,
         photosBefore: d.photos_before || [],
@@ -320,7 +322,7 @@ export const serviceOrdersApi = {
             type: order.type,
             status: order.status,
             description: order.description,
-            technician_name: order.technicianName,
+            technician_id: order.technicianId || null,
             warranty_until: order.warrantyUntil,
             notes: order.notes,
             next_maintenance_date: order.nextMaintenanceDate,
@@ -335,9 +337,10 @@ export const serviceOrdersApi = {
     update: async (id: string, updates: Partial<ServiceOrder>) => {
         const payload: any = { ...updates };
         if (payload.equipmentId) { payload.equipment_id = payload.equipmentId; delete payload.equipmentId; }
+        if (payload.technicianId !== undefined) { payload.technician_id = payload.technicianId; delete payload.technicianId; }
         if (payload.warrantyUntil) { payload.warranty_until = payload.warrantyUntil; delete payload.warrantyUntil; }
         if (payload.nextMaintenanceDate) { payload.next_maintenance_date = payload.nextMaintenanceDate; delete payload.nextMaintenanceDate; }
-        if (payload.technicianName !== undefined) { payload.technician_name = payload.technicianName; delete payload.technicianName; }
+        delete payload.technicianName;
         if (payload.photosBefore !== undefined) { payload.photos_before = payload.photosBefore; delete payload.photosBefore; }
         if (payload.photosAfter !== undefined) { payload.photos_after = payload.photosAfter; delete payload.photosAfter; }
         delete payload.createdAt;
