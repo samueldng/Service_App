@@ -53,8 +53,8 @@ export default function DashboardLayout() {
                         setBlocked('past_due');
                     } else if (org.paymentStatus === 'canceled') {
                         setBlocked('canceled');
-                    } else if ((org as any).trialEndsAt) {
-                        const trialEnd = new Date((org as any).trialEndsAt);
+                    } else if (org.trialEndsAt) {
+                        const trialEnd = new Date(org.trialEndsAt);
                         if (trialEnd < new Date() && org.paymentStatus !== 'active') {
                             setBlocked('trial_expired');
                         }
