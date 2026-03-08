@@ -45,7 +45,7 @@ export const authApi = {
         if (error) throw error;
         return data;
     },
-    register: async (email: string, password: string, name: string, company: string, plan?: string) => {
+    register: async (email: string, password: string, name: string, company: string, plan?: string, cpfCnpj?: string) => {
         const selectedPlan = plan || 'starter';
         const { data, error } = await supabase.auth.signUp({
             email,
