@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown, FileText } from 'lucide-react';
 import { authApi } from '../services/api';
+import { maskCPF, maskCNPJ, unmask, isValidCPF, isValidCNPJ } from '../lib/masks';
 import './LoginPage.css';
 
 const planNames: Record<string, string> = {
@@ -18,6 +19,7 @@ export default function RegisterPage() {
     const [formData, setFormData] = useState({
         name: '', company: '', cpfCnpj: '', email: '', password: '',
     });
+    const [docError, setDocError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -25,11 +27,49 @@ export default function RegisterPage() {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
+    const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = unmask(e.target.value);
+        let masked: string;
+        if (raw.length <= 11) {
+            masked = maskCPF(raw);
+        } else {
+            masked = maskCNPJ(raw);
+        }
+        setFormData(prev => ({ ...prev, cpfCnpj: masked }));
+        setDocError('');
+    };
+
+    const validateDoc = (): boolean => {
+        const raw = unmask(formData.cpfCnpj);
+        if (raw.length <= 11) {
+            if (raw.length !== 11) {
+                setDocError('CPF deve ter 11 dígitos');
+                return false;
+            }
+            if (!isValidCPF(raw)) {
+                setDocError('CPF inválido');
+                return false;
+            }
+        } else {
+            if (raw.length !== 14) {
+                setDocError('CNPJ deve ter 14 dígitos');
+                return false;
+            }
+            if (!isValidCNPJ(raw)) {
+                setDocError('CNPJ inválido');
+                return false;
+            }
+        }
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateDoc()) return;
         setLoading(true);
         try {
-            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan, formData.cpfCnpj);
+            const rawDoc = unmask(formData.cpfCnpj);
+            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan, rawDoc);
             navigate('/dashboard');
         } catch (error: any) {
             alert('Erro ao criar conta: ' + error.message);
@@ -37,6 +77,9 @@ export default function RegisterPage() {
             setLoading(false);
         }
     };
+
+    const rawDigits = unmask(formData.cpfCnpj);
+    const docType = rawDigits.length > 11 ? 'CNPJ' : 'CPF';
 
     return (
         <div className="login-page">
@@ -94,11 +137,23 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">CPF ou CNPJ</label>
+                        <label className="form-label">CPF ou CNPJ <span style={{ color: 'var(--color-text-muted)', fontWeight: 400, fontSize: 'var(--text-xs)' }}>({docType})</span></label>
                         <div className="login-input-wrapper">
                             <FileText size={18} className="login-input-icon" />
-                            <input type="text" name="cpfCnpj" className="form-input login-input" placeholder="000.000.000-00" value={formData.cpfCnpj} onChange={handleChange} required />
+                            <input
+                                type="text"
+                                name="cpfCnpj"
+                                className="form-input login-input"
+                                placeholder={docType === 'CNPJ' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                value={formData.cpfCnpj}
+                                onChange={handleDocChange}
+                                inputMode="numeric"
+                                required
+                            />
                         </div>
+                        {docError && (
+                            <p style={{ color: '#ef4444', fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>{docError}</p>
+                        )}
                     </div>
 
                     <div className="form-group">
