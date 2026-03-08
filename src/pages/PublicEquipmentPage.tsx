@@ -15,6 +15,7 @@ export default function PublicEquipmentPage() {
     const [loading, setLoading] = useState(true);
     const [showRepairForm, setShowRepairForm] = useState(false);
     const [repairDesc, setRepairDesc] = useState('');
+    const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
     useEffect(() => {
         if (!qrCodeUid) return;
