@@ -205,7 +205,7 @@ export default function ServiceOrdersPage() {
                                                     <Calendar size={12} />
                                                     {new Date(order.date).toLocaleDateString('pt-BR')}
                                                 </span>
-                                                <span>{order.technicianName}</span>
+                                                <span>{getTechnicianName(order.technicianId)}</span>
                                                 {order.nextMaintenanceDate && (
                                                     <span>Próxima: {new Date(order.nextMaintenanceDate).toLocaleDateString('pt-BR')}</span>
                                                 )}
