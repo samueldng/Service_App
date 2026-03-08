@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle } from 'lucide-react';
+import { Calendar, Wrench, Shield, CheckCircle, Clock, QrCode, AlertCircle, Cpu, ClipboardList, MessageCircle, Camera, X } from 'lucide-react';
 import { equipmentsApi } from '../services/api';
 import type { Equipment, ServiceOrder, Client, Sector } from '../types';
 import './PublicEquipmentPage.css';
@@ -15,6 +15,7 @@ export default function PublicEquipmentPage() {
     const [loading, setLoading] = useState(true);
     const [showRepairForm, setShowRepairForm] = useState(false);
     const [repairDesc, setRepairDesc] = useState('');
+    const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
     useEffect(() => {
         if (!qrCodeUid) return;
@@ -202,6 +203,47 @@ export default function PublicEquipmentPage() {
                                         <span className="public-timeline__date">{new Date(order.date).toLocaleDateString('pt-BR')}</span>
                                     </div>
                                     <p className="public-timeline__desc">{order.description}</p>
+                                    {/* Before/After Photos */}
+                                    {((order.photosBefore && order.photosBefore.length > 0) || (order.photosAfter && order.photosAfter.length > 0)) && (
+                                        <div className="public-timeline__photos">
+                                            {order.photosBefore && order.photosBefore.length > 0 && (
+                                                <div className="public-timeline__photo-group">
+                                                    <span className="public-timeline__photo-label">
+                                                        <Camera size={10} /> Antes
+                                                    </span>
+                                                    <div className="public-timeline__photo-grid">
+                                                        {order.photosBefore.map((photo, pi) => (
+                                                            <img
+                                                                key={`before-${pi}`}
+                                                                src={photo}
+                                                                alt={`Antes ${pi + 1}`}
+                                                                className="public-timeline__photo"
+                                                                onClick={() => setLightboxImg(photo)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {order.photosAfter && order.photosAfter.length > 0 && (
+                                                <div className="public-timeline__photo-group">
+                                                    <span className="public-timeline__photo-label public-timeline__photo-label--after">
+                                                        <CheckCircle size={10} /> Depois
+                                                    </span>
+                                                    <div className="public-timeline__photo-grid">
+                                                        {order.photosAfter.map((photo, pi) => (
+                                                            <img
+                                                                key={`after-${pi}`}
+                                                                src={photo}
+                                                                alt={`Depois ${pi + 1}`}
+                                                                className="public-timeline__photo"
+                                                                onClick={() => setLightboxImg(photo)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="public-timeline__meta">
                                         <span>Técnico: {order.technicianName}</span>
                                         {order.warrantyUntil && (
@@ -249,6 +291,37 @@ export default function PublicEquipmentPage() {
                     <p>Powered by <span className="text-gradient">MaintQR</span></p>
                 </div>
             </div>
+
+            {/* Photo Lightbox */}
+            {lightboxImg && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setLightboxImg(null)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        background: 'rgba(0,0,0,0.9)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                    }}
+                >
+                    <button
+                        onClick={() => setLightboxImg(null)}
+                        style={{
+                            position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.1)',
+                            border: 'none', color: '#fff', borderRadius: '50%', width: 40, height: 40,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <X size={20} />
+                    </button>
+                    <img
+                        src={lightboxImg}
+                        alt="Foto ampliada"
+                        style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 'var(--radius-lg)', objectFit: 'contain' }}
+                    />
+                </motion.div>
+            )}
         </div>
     );
 }

@@ -58,6 +58,8 @@ export interface ServiceOrder {
   warrantyUntil?: string;
   notes?: string;
   photos?: string[];
+  photosBefore?: string[];
+  photosAfter?: string[];
   nextMaintenanceDate?: string;
   createdAt: string;
 }

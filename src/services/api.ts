@@ -251,7 +251,8 @@ export const equipmentsApi = {
                 id: d.id, equipmentId: d.equipment_id, technicianName: d.technician_name || 'Técnico',
                 date: d.date, type: d.type, status: d.status, description: d.description,
                 warrantyUntil: d.warranty_until, nextMaintenanceDate: d.next_maintenance_date,
-                notes: d.notes, createdAt: d.created_at
+                notes: d.notes, photosBefore: d.photos_before || [], photosAfter: d.photos_after || [],
+                createdAt: d.created_at
             })) as ServiceOrder[]
         };
     },
@@ -295,6 +296,8 @@ function mapServiceOrderFromDb(d: any): ServiceOrder {
         technicianName: d.technician_name || 'Técnico',
         warrantyUntil: d.warranty_until,
         nextMaintenanceDate: d.next_maintenance_date,
+        photosBefore: d.photos_before || [],
+        photosAfter: d.photos_after || [],
         createdAt: d.created_at,
     };
 }
@@ -311,7 +314,7 @@ export const serviceOrdersApi = {
         return (data || []).map(mapServiceOrderFromDb) as ServiceOrder[];
     },
     create: async (order: Omit<ServiceOrder, 'id' | 'createdAt'>) => {
-        const payload = {
+        const payload: any = {
             equipment_id: order.equipmentId,
             date: order.date,
             type: order.type,
@@ -320,8 +323,10 @@ export const serviceOrdersApi = {
             technician_name: order.technicianName,
             warranty_until: order.warrantyUntil,
             notes: order.notes,
-            next_maintenance_date: order.nextMaintenanceDate
+            next_maintenance_date: order.nextMaintenanceDate,
         };
+        if (order.photosBefore && order.photosBefore.length > 0) payload.photos_before = order.photosBefore;
+        if (order.photosAfter && order.photosAfter.length > 0) payload.photos_after = order.photosAfter;
 
         const { data, error } = await supabase.from('service_orders').insert([payload]).select().single();
         if (error) throw error;
@@ -333,6 +338,8 @@ export const serviceOrdersApi = {
         if (payload.warrantyUntil) { payload.warranty_until = payload.warrantyUntil; delete payload.warrantyUntil; }
         if (payload.nextMaintenanceDate) { payload.next_maintenance_date = payload.nextMaintenanceDate; delete payload.nextMaintenanceDate; }
         if (payload.technicianName !== undefined) { payload.technician_name = payload.technicianName; delete payload.technicianName; }
+        if (payload.photosBefore !== undefined) { payload.photos_before = payload.photosBefore; delete payload.photosBefore; }
+        if (payload.photosAfter !== undefined) { payload.photos_after = payload.photosAfter; delete payload.photosAfter; }
         delete payload.createdAt;
 
         const { data, error } = await supabase.from('service_orders').update(payload).eq('id', id).select().single();
