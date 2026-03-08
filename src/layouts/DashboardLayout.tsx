@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { authApi, organizationsApi } from '../services/api';
 import type { Organization, User } from '../types';
+import PaymentBlockedPage from '../pages/PaymentBlockedPage';
 import './DashboardLayout.css';
 
 const menuItems = [
