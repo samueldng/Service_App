@@ -44,20 +44,30 @@ export const authApi = {
         return data;
     },
     register: async (email: string, password: string, name: string, company: string, plan?: string) => {
+        const selectedPlan = plan || 'starter';
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { full_name: name, company: company, plan: plan || 'starter' }
+                data: { full_name: name, company: company, plan: selectedPlan }
             }
         });
         if (error) throw error;
 
         // Only call RPC if user session is immediately available (no email confirmation required)
         if (data.session) {
-            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company, plan_name: plan || 'starter' });
+            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company, plan_name: selectedPlan });
             if (rpcError) {
                 console.error('Tenant creation error:', rpcError);
+            }
+
+            // Create Asaas customer and subscription
+            try {
+                await supabase.functions.invoke('asaas-create-subscription', {
+                    body: { name, email, plan: selectedPlan },
+                });
+            } catch (asaasErr) {
+                console.error('Asaas subscription error:', asaasErr);
             }
         }
 
