@@ -109,6 +109,13 @@ export default function TechniciansPage() {
         toast.success('Credenciais copiadas!');
     };
 
+    const portalUrl = `${window.location.origin}/tecnico`;
+
+    const copyPortalLink = () => {
+        navigator.clipboard.writeText(portalUrl);
+        toast.success('Link do portal copiado!');
+    };
+
     const filtered = technicians.filter(t =>
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.email.toLowerCase().includes(search.toLowerCase())
