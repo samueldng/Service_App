@@ -295,6 +295,8 @@ function mapServiceOrderFromDb(d: any): ServiceOrder {
         technicianName: d.technician_name || 'Técnico',
         warrantyUntil: d.warranty_until,
         nextMaintenanceDate: d.next_maintenance_date,
+        photosBefore: d.photos_before || [],
+        photosAfter: d.photos_after || [],
         createdAt: d.created_at,
     };
 }
