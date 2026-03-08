@@ -350,8 +350,22 @@ export default function ServiceOrdersPage() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Técnico</label>
-                                    <input className="form-input" value={form.technicianName} onChange={e => setForm(p => ({ ...p, technicianName: e.target.value }))} />
+                                    <label className="form-label">Técnico (Opcional)</label>
+                                    <select
+                                        className="form-input"
+                                        value={form.technicianId}
+                                        onChange={e => setForm(p => ({ ...p, technicianId: e.target.value }))}
+                                    >
+                                        <option value="">Sem técnico atribuído</option>
+                                        {techniciansList.map(t => (
+                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                    {techniciansList.length === 0 && (
+                                        <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <UserCog size={12} /> Nenhum técnico cadastrado. Cadastre em Técnicos.
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Data de Garantia (Opcional)</label>
