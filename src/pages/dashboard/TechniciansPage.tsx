@@ -83,28 +83,24 @@ export default function TechniciansPage() {
             if (signUpError) throw signUpError;
             if (!signUpData.user) throw new Error('Erro ao criar usuário');
 
-            // Update the technician's profile with org_id and role
-            // Need to use admin session to update, so restore it first
+            const techUserId = signUpData.user.id;
+
+            // Restore admin session immediately
             await supabase.auth.setSession({
                 access_token: adminSession.access_token,
                 refresh_token: adminSession.refresh_token
             });
 
-            // Update the new user's profile
-            const { error: updateError } = await supabase
-                .from('users')
-                .update({ org_id: profile.org_id, role: 'technician', name: form.name })
-                .eq('id', signUpData.user.id);
+            // Use SECURITY DEFINER RPC to: confirm email + set org + set role
+            const { error: setupError } = await supabase.rpc('setup_technician', {
+                tech_user_id: techUserId,
+                org_id_param: profile.org_id,
+                tech_name: form.name
+            });
 
-            if (updateError) {
-                console.error('Profile update error:', updateError);
-                // Try via RPC as fallback
-                const rpcResult = await supabase.rpc('assign_technician_org', {
-                    tech_user_id: signUpData.user.id,
-                    org_id_param: profile.org_id,
-                    tech_name: form.name
-                });
-                if (rpcResult.error) console.error('RPC fallback error:', rpcResult.error);
+            if (setupError) {
+                console.error('Setup technician error:', setupError);
+                throw new Error('Técnico criado mas houve erro ao configurar. Verifique o banco.');
             }
 
             setCreatedCredentials({ email: form.email, password: form.password });
