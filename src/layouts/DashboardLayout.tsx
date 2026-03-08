@@ -46,6 +46,20 @@ export default function DashboardLayout() {
                     document.documentElement.style.setProperty('--color-primary', org.brandColor);
                     document.documentElement.style.setProperty('--color-accent-primary', org.brandColor);
                 }
+
+                // Check trial/payment status
+                if (org) {
+                    if (org.paymentStatus === 'past_due') {
+                        setBlocked('past_due');
+                    } else if (org.paymentStatus === 'canceled') {
+                        setBlocked('canceled');
+                    } else if ((org as any).trialEndsAt) {
+                        const trialEnd = new Date((org as any).trialEndsAt);
+                        if (trialEnd < new Date() && org.paymentStatus !== 'active') {
+                            setBlocked('trial_expired');
+                        }
+                    }
+                }
             } catch (error) {
                 console.error("Session error:", error);
                 navigate('/login');
