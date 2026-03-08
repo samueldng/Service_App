@@ -203,6 +203,47 @@ export default function PublicEquipmentPage() {
                                         <span className="public-timeline__date">{new Date(order.date).toLocaleDateString('pt-BR')}</span>
                                     </div>
                                     <p className="public-timeline__desc">{order.description}</p>
+                                    {/* Before/After Photos */}
+                                    {((order.photosBefore && order.photosBefore.length > 0) || (order.photosAfter && order.photosAfter.length > 0)) && (
+                                        <div className="public-timeline__photos">
+                                            {order.photosBefore && order.photosBefore.length > 0 && (
+                                                <div className="public-timeline__photo-group">
+                                                    <span className="public-timeline__photo-label">
+                                                        <Camera size={10} /> Antes
+                                                    </span>
+                                                    <div className="public-timeline__photo-grid">
+                                                        {order.photosBefore.map((photo, pi) => (
+                                                            <img
+                                                                key={`before-${pi}`}
+                                                                src={photo}
+                                                                alt={`Antes ${pi + 1}`}
+                                                                className="public-timeline__photo"
+                                                                onClick={() => setLightboxImg(photo)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {order.photosAfter && order.photosAfter.length > 0 && (
+                                                <div className="public-timeline__photo-group">
+                                                    <span className="public-timeline__photo-label public-timeline__photo-label--after">
+                                                        <CheckCircle size={10} /> Depois
+                                                    </span>
+                                                    <div className="public-timeline__photo-grid">
+                                                        {order.photosAfter.map((photo, pi) => (
+                                                            <img
+                                                                key={`after-${pi}`}
+                                                                src={photo}
+                                                                alt={`Depois ${pi + 1}`}
+                                                                className="public-timeline__photo"
+                                                                onClick={() => setLightboxImg(photo)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="public-timeline__meta">
                                         <span>Técnico: {order.technicianName}</span>
                                         {order.warrantyUntil && (
