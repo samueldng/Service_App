@@ -291,6 +291,37 @@ export default function PublicEquipmentPage() {
                     <p>Powered by <span className="text-gradient">MaintQR</span></p>
                 </div>
             </div>
+
+            {/* Photo Lightbox */}
+            {lightboxImg && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setLightboxImg(null)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 9999,
+                        background: 'rgba(0,0,0,0.9)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                    }}
+                >
+                    <button
+                        onClick={() => setLightboxImg(null)}
+                        style={{
+                            position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.1)',
+                            border: 'none', color: '#fff', borderRadius: '50%', width: 40, height: 40,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <X size={20} />
+                    </button>
+                    <img
+                        src={lightboxImg}
+                        alt="Foto ampliada"
+                        style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 'var(--radius-lg)', objectFit: 'contain' }}
+                    />
+                </motion.div>
+            )}
         </div>
     );
 }
