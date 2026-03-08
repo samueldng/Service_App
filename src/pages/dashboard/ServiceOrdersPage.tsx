@@ -4,7 +4,6 @@ import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Cam
 import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import type { ServiceOrder, Equipment, Client } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
 import PhotoCapture from '../../components/PhotoCapture';
 
 interface TechnicianOption {

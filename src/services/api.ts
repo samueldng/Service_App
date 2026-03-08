@@ -336,9 +336,10 @@ export const serviceOrdersApi = {
     update: async (id: string, updates: Partial<ServiceOrder>) => {
         const payload: any = { ...updates };
         if (payload.equipmentId) { payload.equipment_id = payload.equipmentId; delete payload.equipmentId; }
+        if (payload.technicianId !== undefined) { payload.technician_id = payload.technicianId; delete payload.technicianId; }
         if (payload.warrantyUntil) { payload.warranty_until = payload.warrantyUntil; delete payload.warrantyUntil; }
         if (payload.nextMaintenanceDate) { payload.next_maintenance_date = payload.nextMaintenanceDate; delete payload.nextMaintenanceDate; }
-        if (payload.technicianName !== undefined) { payload.technician_name = payload.technicianName; delete payload.technicianName; }
+        delete payload.technicianName;
         if (payload.photosBefore !== undefined) { payload.photos_before = payload.photosBefore; delete payload.photosBefore; }
         if (payload.photosAfter !== undefined) { payload.photos_after = payload.photosAfter; delete payload.photosAfter; }
         delete payload.createdAt;
