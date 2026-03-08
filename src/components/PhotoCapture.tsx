@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Image, Plus } from 'lucide-react';
+import { Camera, X, Image } from 'lucide-react';
 
 interface PhotoCaptureProps {
   label: string;
