@@ -160,13 +160,13 @@ export default function TechniciansPage() {
             </div>
             {/* Portal Link Banner */}
             <div className="glass-card" style={{
-                padding: 'var(--space-4) var(--space-6)', marginBottom: 'var(--space-4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)',
+                padding: 'var(--space-4)', marginBottom: 'var(--space-4)',
+                display: 'flex', flexDirection: 'column', gap: 'var(--space-3)',
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 211, 238, 0.06) 100%)',
                 border: '1px solid rgba(99, 102, 241, 0.15)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                    <Link2 size={18} style={{ color: 'var(--color-accent-primary)' }} />
+                    <Link2 size={18} style={{ color: 'var(--color-accent-primary)', flexShrink: 0 }} />
                     <div>
                         <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Portal dos Técnicos</span>
                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
@@ -174,15 +174,16 @@ export default function TechniciansPage() {
                         </p>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     <code style={{
                         fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)',
                         background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-cyan)', fontFamily: 'monospace'
+                        color: 'var(--color-cyan)', fontFamily: 'monospace',
+                        wordBreak: 'break-all', flex: '1 1 0', minWidth: 0
                     }}>
                         {portalUrl}
                     </code>
-                    <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }} onClick={copyPortalLink}>
+                    <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)', flexShrink: 0 }} onClick={copyPortalLink}>
                         <Copy size={14} /> Copiar
                     </button>
                 </div>
@@ -203,24 +204,24 @@ export default function TechniciansPage() {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                         {filtered.map((tech, i) => (
-                            <motion.div key={tech.id} className="glass-card" style={{ padding: 'var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                            <motion.div key={tech.id} className="glass-card" style={{ padding: 'var(--space-3) var(--space-4)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}
                                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0, flex: 1 }}>
                                     <div style={{
-                                        width: 42, height: 42, borderRadius: 'var(--radius-lg)',
+                                        width: 38, height: 38, borderRadius: 'var(--radius-lg)', flexShrink: 0,
                                         background: 'rgba(99, 102, 241, 0.12)', color: 'var(--color-accent-primary)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 'var(--text-sm)'
                                     }}>
                                         {tech.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <div>
-                                        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{tech.name}</span>
+                                    <div style={{ minWidth: 0 }}>
+                                        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tech.name}</span>
                                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
-                                            Técnico • Criado em {new Date(tech.createdAt).toLocaleDateString('pt-BR')}
+                                            Técnico • {new Date(tech.createdAt).toLocaleDateString('pt-BR')}
                                         </p>
                                     </div>
                                 </div>
-                                <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(tech.id)} style={{ color: 'var(--color-rose)' }}>
+                                <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(tech.id)} style={{ color: 'var(--color-rose)', flexShrink: 0 }}>
                                     <Trash2 size={16} />
                                 </button>
                             </motion.div>
