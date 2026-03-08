@@ -76,7 +76,11 @@ export default function DashboardLayout() {
     };
 
     if (loading) {
-        return (
+    if (blocked && organization) {
+        return <PaymentBlockedPage organization={organization} reason={blocked} />;
+    }
+
+    return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
                 <Loader2 size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
             </div>
