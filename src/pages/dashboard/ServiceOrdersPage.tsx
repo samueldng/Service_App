@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp } from 'lucide-react';
 import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
 import type { ServiceOrder, Equipment, Client } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
