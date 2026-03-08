@@ -7,7 +7,7 @@ export interface Organization {
   createdAt: string;
   logoUrl?: string;
   brandColor?: string; // Hex color
-  subscriptionPlan: 'free' | 'pro' | 'enterprise';
+  subscriptionPlan: 'free' | 'starter' | 'pro' | 'professional' | 'enterprise';
   paymentStatus: 'active' | 'past_due' | 'canceled';
 }
 

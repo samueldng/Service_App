@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QrCode, Mail, Lock, User, Building, ArrowRight } from 'lucide-react';
+import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown } from 'lucide-react';
 import { authApi } from '../services/api';
 import './LoginPage.css';
 
+const planNames: Record<string, string> = {
+    starter: 'Starter — R$ 59/mês',
+    professional: 'Professional — R$ 149/mês',
+    enterprise: 'Enterprise — R$ 349/mês',
+};
+
 export default function RegisterPage() {
+    const [searchParams] = useSearchParams();
+    const selectedPlan = searchParams.get('plan') || 'starter';
+
     const [formData, setFormData] = useState({
         name: '', company: '', email: '', password: '',
     });
@@ -20,8 +29,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await authApi.register(formData.email, formData.password, formData.name, formData.company);
-            // Supabase auth auto-logs in the session after a successful register
+            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan);
             navigate('/dashboard');
         } catch (error: any) {
             alert('Erro ao criar conta: ' + error.message);
@@ -55,6 +63,17 @@ export default function RegisterPage() {
                     </Link>
                     <h1 className="login-card__title">Crie sua conta</h1>
                     <p className="login-card__subtitle">7 dias grátis • Sem cartão de crédito</p>
+                </div>
+
+                {/* Selected Plan Badge */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                    padding: 'var(--space-3) var(--space-4)', borderRadius: 'var(--radius-lg)',
+                    background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)',
+                    marginBottom: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--color-accent-tertiary)'
+                }}>
+                    <Crown size={16} />
+                    <span>Plano selecionado: <strong style={{ color: 'var(--color-text-primary)' }}>{planNames[selectedPlan] || planNames.starter}</strong></span>
                 </div>
 
                 <form className="login-card__form" onSubmit={handleSubmit}>
@@ -91,7 +110,7 @@ export default function RegisterPage() {
                     </div>
 
                     <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={loading}>
-                        {loading ? 'Criando conta...' : 'Criar Conta Grátis'}
+                        {loading ? 'Criando conta...' : 'Começar Trial de 7 Dias'}
                         {!loading && <ArrowRight size={18} />}
                     </button>
                 </form>

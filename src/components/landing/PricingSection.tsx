@@ -6,7 +6,7 @@ import './PricingSection.css';
 const plans = [
     {
         name: 'Starter',
-        price: 'R$ 79',
+        price: 'R$ 59',
         period: '/mês',
         description: 'Ideal para profissionais autônomos',
         features: [
@@ -18,6 +18,7 @@ const plans = [
         ],
         cta: 'Começar Grátis',
         popular: false,
+        planId: 'starter',
     },
     {
         name: 'Professional',
@@ -35,6 +36,7 @@ const plans = [
         ],
         cta: 'Assinar Agora',
         popular: true,
+        planId: 'professional',
     },
     {
         name: 'Enterprise',
@@ -53,6 +55,7 @@ const plans = [
         ],
         cta: 'Falar com Vendas',
         popular: false,
+        planId: 'enterprise',
     },
 ];
 
@@ -109,7 +112,7 @@ export default function PricingSection() {
                                 ))}
                             </ul>
                             <Link
-                                to="/register"
+                                to={`/register?plan=${plan.planId}`}
                                 className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} btn-lg`}
                                 style={{ width: '100%' }}
                             >
