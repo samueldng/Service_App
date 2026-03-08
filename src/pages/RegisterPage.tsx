@@ -16,7 +16,7 @@ export default function RegisterPage() {
     const selectedPlan = searchParams.get('plan') || 'starter';
 
     const [formData, setFormData] = useState({
-        name: '', company: '', email: '', password: '',
+        name: '', company: '', cpfCnpj: '', email: '', password: '',
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
