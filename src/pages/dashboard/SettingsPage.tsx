@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Palette, CreditCard, Save, CheckCircle2, AlertTriangle, Building, Camera, Upload, ArrowUpCircle } from 'lucide-react';
+import { Palette, CreditCard, Save, CheckCircle2, AlertTriangle, Building, Upload, ArrowUpCircle } from 'lucide-react';
 import { organizationsApi } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import type { Organization } from '../../types';

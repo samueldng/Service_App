@@ -43,22 +43,21 @@ export const authApi = {
         if (error) throw error;
         return data;
     },
-    register: async (email: string, password: string, name: string, company: string) => {
+    register: async (email: string, password: string, name: string, company: string, plan?: string) => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                data: { full_name: name, company: company }
+                data: { full_name: name, company: company, plan: plan || 'starter' }
             }
         });
         if (error) throw error;
 
         // Only call RPC if user session is immediately available (no email confirmation required)
         if (data.session) {
-            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company });
+            const { error: rpcError } = await supabase.rpc('create_tenant_from_auth', { org_name: company, plan_name: plan || 'starter' });
             if (rpcError) {
                 console.error('Tenant creation error:', rpcError);
-                // Don't throw — user is still created, org can be set up later
             }
         }
 
