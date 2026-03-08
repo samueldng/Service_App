@@ -64,23 +64,47 @@ export default function TechniciansPage() {
 
         setLoading(true);
         try {
-            // Get current user's org_id
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Não autenticado');
+            // Get current user's org_id and save current session
+            const { data: { session: adminSession } } = await supabase.auth.getSession();
+            if (!adminSession) throw new Error('Não autenticado');
 
-            const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).maybeSingle();
+            const { data: profile } = await supabase.from('users').select('org_id').eq('id', adminSession.user.id).maybeSingle();
             if (!profile?.org_id) throw new Error('Organização não encontrada');
 
-            // Create the technician via Supabase Admin RPC or direct signup
-            // We use a custom RPC to create tech users within the same org
-            const { error } = await supabase.rpc('create_technician', {
-                tech_name: form.name,
-                tech_email: form.email,
-                tech_password: form.password,
-                org_id_param: profile.org_id
+            // Use standard signUp to create the technician (Supabase handles password correctly)
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: form.email,
+                password: form.password,
+                options: {
+                    data: { full_name: form.name }
+                }
             });
 
-            if (error) throw error;
+            if (signUpError) throw signUpError;
+            if (!signUpData.user) throw new Error('Erro ao criar usuário');
+
+            // Update the technician's profile with org_id and role
+            // Need to use admin session to update, so restore it first
+            await supabase.auth.setSession({
+                access_token: adminSession.access_token,
+                refresh_token: adminSession.refresh_token
+            });
+
+            // Update the new user's profile
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ org_id: profile.org_id, role: 'technician', name: form.name })
+                .eq('id', signUpData.user.id);
+
+            if (updateError) {
+                console.error('Profile update error:', updateError);
+                // Try via RPC as fallback
+                await supabase.rpc('assign_technician_org', {
+                    tech_user_id: signUpData.user.id,
+                    org_id_param: profile.org_id,
+                    tech_name: form.name
+                }).catch(() => {});
+            }
 
             setCreatedCredentials({ email: form.email, password: form.password });
             toast.success('Técnico criado com sucesso!');
