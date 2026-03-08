@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building } from 'lucide-react';
+import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, Image as ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
 import type { ServiceOrder, Equipment, Client } from '../../types';
 import { v4 as uuidv4 } from 'uuid';
+import PhotoCapture from '../../components/PhotoCapture';
 
 export default function ServiceOrdersPage() {
     const [orders, setOrders] = useState<ServiceOrder[]>([]);
@@ -12,6 +13,11 @@ export default function ServiceOrdersPage() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<string>('all');
     const [showModal, setShowModal] = useState(false);
+    const [photosBefore, setPhotosBefore] = useState<string[]>([]);
+    const [photosAfter, setPhotosAfter] = useState<string[]>([]);
+    const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+    const [showPhotoModal, setShowPhotoModal] = useState<{ orderId: string; type: 'before' | 'after' } | null>(null);
+    const [addingPhotos, setAddingPhotos] = useState<string[]>([]);
     const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianName: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
 
     useEffect(() => {
@@ -32,7 +38,7 @@ export default function ServiceOrdersPage() {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const handleCreate = async () => {
-        if (!form.equipmentId) return; // Prevent saving without equipment
+        if (!form.equipmentId) return;
 
         const newOrder: ServiceOrder = {
             id: `os-${uuidv4().slice(0, 8)}`,
@@ -43,11 +49,15 @@ export default function ServiceOrdersPage() {
             date: new Date().toISOString().split('T')[0],
             status: 'aberta',
             createdAt: new Date().toISOString().split('T')[0],
+            photosBefore: photosBefore.length > 0 ? photosBefore : undefined,
+            photosAfter: photosAfter.length > 0 ? photosAfter : undefined,
             ...(form.warrantyUntil ? { warrantyUntil: form.warrantyUntil } : {})
         };
-        await serviceOrdersApi.create(newOrder);
-        setOrders(prev => [...prev, newOrder]);
+        const created = await serviceOrdersApi.create(newOrder);
+        setOrders(prev => [...prev, created]);
         setShowModal(false);
+        setPhotosBefore([]);
+        setPhotosAfter([]);
     };
 
     const updateStatus = async (id: string, status: ServiceOrder['status']) => {
@@ -55,9 +65,47 @@ export default function ServiceOrdersPage() {
         setOrders(prev => prev.map(o => o.id === id ? updated : o));
     };
 
+    const handleAddPhotosAfter = async (orderId: string) => {
+        if (addingPhotos.length === 0) return;
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+        const existingAfter = order.photosAfter || [];
+        const updated = await serviceOrdersApi.update(orderId, {
+            photosAfter: [...existingAfter, ...addingPhotos]
+        } as any);
+        setOrders(prev => prev.map(o => o.id === orderId ? updated : o));
+        setShowPhotoModal(null);
+        setAddingPhotos([]);
+    };
+
     const statusLabels = { aberta: 'Aberta', em_progresso: 'Em Progresso', concluida: 'Concluída' };
     const typeLabels = { preventiva: 'Preventiva', corretiva: 'Corretiva', instalacao: 'Instalação' };
     const typeColors = { preventiva: '#6366f1', corretiva: '#fb7185', instalacao: '#22d3ee' };
+
+    const PhotoThumbnails = ({ photos, label }: { photos?: string[]; label: string }) => {
+        if (!photos || photos.length === 0) return null;
+        return (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)', marginBottom: 'var(--space-2)' }}>
+                    <Camera size={12} /> {label} ({photos.length})
+                </span>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                    {photos.map((photo, i) => (
+                        <img
+                            key={i}
+                            src={photo}
+                            alt={`${label} ${i + 1}`}
+                            style={{
+                                width: 56, height: 56, objectFit: 'cover',
+                                borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)',
+                                cursor: 'pointer'
+                            }}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div>
@@ -70,6 +118,8 @@ export default function ServiceOrdersPage() {
                     const firstClient = clients[0]?.id || '';
                     const firstEq = equipments.find(e => e.clientId === firstClient)?.id || '';
                     setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
+                    setPhotosBefore([]);
+                    setPhotosAfter([]);
                     setShowModal(true);
                 }}>
                     <Plus size={18} /> Nova OS
@@ -95,6 +145,9 @@ export default function ServiceOrdersPage() {
                         const eq = getEquipment(order.equipmentId);
                         const client = clients.find(c => c.id === eq?.clientId);
                         const isWarranty = order.warrantyUntil && new Date(order.warrantyUntil) > new Date();
+                        const isExpanded = expandedOrder === order.id;
+                        const hasPhotos = (order.photosBefore && order.photosBefore.length > 0) || (order.photosAfter && order.photosAfter.length > 0);
+
                         return (
                             <motion.div key={order.id} className="glass-card" style={{ padding: 'var(--space-5)' }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                                 <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
@@ -117,6 +170,11 @@ export default function ServiceOrdersPage() {
                                                         <Shield size={10} /> Garantia
                                                     </span>
                                                 )}
+                                                {hasPhotos && (
+                                                    <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>
+                                                        <Camera size={10} /> Fotos
+                                                    </span>
+                                                )}
                                             </div>
                                             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: 'var(--space-2)' }}>
                                                 {order.description.slice(0, 150)}{order.description.length > 150 ? '...' : ''}
@@ -134,6 +192,24 @@ export default function ServiceOrdersPage() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                        {hasPhotos && (
+                                            <button
+                                                className="btn btn-ghost btn-icon"
+                                                onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                                                style={{ padding: 'var(--space-1)' }}
+                                            >
+                                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+                                        )}
+                                        {order.status === 'concluida' && (!order.photosAfter || order.photosAfter.length === 0) && (
+                                            <button
+                                                className="btn btn-secondary"
+                                                onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
+                                                style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
+                                            >
+                                                <Camera size={14} /> Fotos Depois
+                                            </button>
+                                        )}
                                         <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : 'badge-primary'}`}>
                                             {statusLabels[order.status]}
                                         </span>
@@ -151,16 +227,54 @@ export default function ServiceOrdersPage() {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Expanded photos section */}
+                                <AnimatePresence>
+                                    {isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            style={{ overflow: 'hidden', borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)' }}
+                                        >
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                                <div>
+                                                    <PhotoThumbnails photos={order.photosBefore} label="📷 Antes do Serviço" />
+                                                    {(!order.photosBefore || order.photosBefore.length === 0) && (
+                                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>Sem fotos do antes</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <PhotoThumbnails photos={order.photosAfter} label="✅ Depois do Serviço" />
+                                                    {(!order.photosAfter || order.photosAfter.length === 0) && (
+                                                        <div>
+                                                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginBottom: 'var(--space-2)' }}>Sem fotos do depois</p>
+                                                            <button
+                                                                className="btn btn-secondary"
+                                                                onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
+                                                                style={{ fontSize: 'var(--text-xs)' }}
+                                                            >
+                                                                <Camera size={14} /> Adicionar Fotos
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </motion.div>
                         );
                     })}
                 </div>
             </div>
 
+            {/* Create OS Modal */}
             <AnimatePresence>
                 {showModal && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowModal(false)}>
-                        <motion.div className="modal glass-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                        <motion.div className="modal glass-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}
+                            style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                             <div className="modal__header">
                                 <h2>Nova Ordem de Serviço</h2>
                                 <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>
@@ -173,7 +287,6 @@ export default function ServiceOrdersPage() {
                                         value={form.clientId}
                                         onChange={e => {
                                             const newClientId = e.target.value;
-                                            // Auto-select first equipment of this client
                                             const firstEqId = equipments.find(eq => eq.clientId === newClientId)?.id || '';
                                             setForm(p => ({ ...p, clientId: newClientId, equipmentId: firstEqId }));
                                         }}
@@ -214,15 +327,61 @@ export default function ServiceOrdersPage() {
                                 <div className="form-group">
                                     <label className="form-label">Data de Garantia (Opcional)</label>
                                     <input className="form-input" type="date" value={form.warrantyUntil} onChange={e => setForm(p => ({ ...p, warrantyUntil: e.target.value }))} />
-                                    <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>Se preenchido, o equipamento constará como "Garantia Ativa" no Dashboard até esta data.</p>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Descrição</label>
-                                    <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descreva o serviço realizado..." style={{ resize: 'vertical' }} />
+                                    <textarea className="form-input" rows={3} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descreva o serviço..." style={{ resize: 'vertical' }} />
                                 </div>
+
+                                {/* Photo Capture Sections */}
+                                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
+                                    <PhotoCapture
+                                        label="Fotos ANTES do Serviço"
+                                        photos={photosBefore}
+                                        onChange={setPhotosBefore}
+                                        maxPhotos={5}
+                                    />
+                                </div>
+                                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
+                                    <PhotoCapture
+                                        label="Fotos DEPOIS do Serviço (opcional)"
+                                        photos={photosAfter}
+                                        onChange={setPhotosAfter}
+                                        maxPhotos={5}
+                                    />
+                                </div>
+
                                 <div className="modal__actions">
                                     <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
                                     <button className="btn btn-primary" onClick={handleCreate}>Criar OS</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Add Photos After Modal */}
+            <AnimatePresence>
+                {showPhotoModal && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPhotoModal(null)}>
+                        <motion.div className="modal glass-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                            <div className="modal__header">
+                                <h2>Adicionar Fotos — Depois do Serviço</h2>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowPhotoModal(null)}><X size={20} /></button>
+                            </div>
+                            <div className="modal__form">
+                                <PhotoCapture
+                                    label="Fotos do equipamento após o serviço"
+                                    photos={addingPhotos}
+                                    onChange={setAddingPhotos}
+                                    maxPhotos={5}
+                                />
+                                <div className="modal__actions">
+                                    <button className="btn btn-secondary" onClick={() => setShowPhotoModal(null)}>Cancelar</button>
+                                    <button className="btn btn-primary" onClick={() => handleAddPhotosAfter(showPhotoModal.orderId)} disabled={addingPhotos.length === 0}>
+                                        Salvar Fotos
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>
