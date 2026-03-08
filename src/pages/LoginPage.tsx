@@ -16,7 +16,13 @@ export default function LoginPage() {
         setLoading(true);
         try {
             await authApi.login(email, password);
-            navigate('/dashboard');
+            // Check role to redirect accordingly
+            const currentUser = await authApi.getCurrentUser();
+            if (currentUser?.role === 'technician') {
+                navigate('/tecnico');
+            } else {
+                navigate('/dashboard');
+            }
         } catch {
             alert('Credenciais inválidas');
         } finally {
