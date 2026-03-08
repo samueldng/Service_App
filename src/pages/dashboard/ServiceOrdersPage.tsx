@@ -139,7 +139,7 @@ export default function ServiceOrdersPage() {
                 <button className="btn btn-primary" onClick={() => {
                     const firstClient = clients[0]?.id || '';
                     const firstEq = equipments.find(e => e.clientId === firstClient)?.id || '';
-                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianName: 'Carlos Mendes', warrantyUntil: '' });
+                    setForm({ clientId: firstClient, equipmentId: firstEq, type: 'preventiva', description: '', technicianId: '', warrantyUntil: '' });
                     setPhotosBefore([]);
                     setPhotosAfter([]);
                     setShowModal(true);
