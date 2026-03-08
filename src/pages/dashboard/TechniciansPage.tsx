@@ -160,13 +160,13 @@ export default function TechniciansPage() {
             </div>
             {/* Portal Link Banner */}
             <div className="glass-card" style={{
-                padding: 'var(--space-4) var(--space-6)', marginBottom: 'var(--space-4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)',
+                padding: 'var(--space-4)', marginBottom: 'var(--space-4)',
+                display: 'flex', flexDirection: 'column', gap: 'var(--space-3)',
                 background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 211, 238, 0.06) 100%)',
                 border: '1px solid rgba(99, 102, 241, 0.15)'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                    <Link2 size={18} style={{ color: 'var(--color-accent-primary)' }} />
+                    <Link2 size={18} style={{ color: 'var(--color-accent-primary)', flexShrink: 0 }} />
                     <div>
                         <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Portal dos Técnicos</span>
                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
@@ -174,15 +174,16 @@ export default function TechniciansPage() {
                         </p>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     <code style={{
                         fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)',
                         background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-cyan)', fontFamily: 'monospace'
+                        color: 'var(--color-cyan)', fontFamily: 'monospace',
+                        wordBreak: 'break-all', flex: '1 1 0', minWidth: 0
                     }}>
                         {portalUrl}
                     </code>
-                    <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }} onClick={copyPortalLink}>
+                    <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)', flexShrink: 0 }} onClick={copyPortalLink}>
                         <Copy size={14} /> Copiar
                     </button>
                 </div>
