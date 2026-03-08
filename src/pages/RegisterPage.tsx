@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown } from 'lucide-react';
+import { QrCode, Mail, Lock, User, Building, ArrowRight, Crown, FileText } from 'lucide-react';
 import { authApi } from '../services/api';
 import './LoginPage.css';
 
@@ -16,7 +16,7 @@ export default function RegisterPage() {
     const selectedPlan = searchParams.get('plan') || 'starter';
 
     const [formData, setFormData] = useState({
-        name: '', company: '', email: '', password: '',
+        name: '', company: '', cpfCnpj: '', email: '', password: '',
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan);
+            await authApi.register(formData.email, formData.password, formData.name, formData.company, selectedPlan, formData.cpfCnpj);
             navigate('/dashboard');
         } catch (error: any) {
             alert('Erro ao criar conta: ' + error.message);
@@ -90,6 +90,14 @@ export default function RegisterPage() {
                         <div className="login-input-wrapper">
                             <Building size={18} className="login-input-icon" />
                             <input type="text" name="company" className="form-input login-input" placeholder="Minha Empresa Ltda" value={formData.company} onChange={handleChange} required />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">CPF ou CNPJ</label>
+                        <div className="login-input-wrapper">
+                            <FileText size={18} className="login-input-icon" />
+                            <input type="text" name="cpfCnpj" className="form-input login-input" placeholder="000.000.000-00" value={formData.cpfCnpj} onChange={handleChange} required />
                         </div>
                     </div>
 
