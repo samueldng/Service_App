@@ -128,9 +128,9 @@ export default function ServiceOrdersPage() {
 
             <div className="glass-card" style={{ padding: 'var(--space-6)' }}>
                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-                    {['all', 'aberta', 'em_progresso', 'concluida'].map(f => (
+                    {['all', 'aberta', 'em_progresso', 'aguardando_aprovacao', 'concluida'].map(f => (
                         <button key={f} className={`btn ${filter === f ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setFilter(f)} style={{ fontSize: 'var(--text-xs)' }}>
-                            {f === 'all' ? 'Todas' : statusLabels[f as keyof typeof statusLabels]}
+                            {f === 'all' ? 'Todas' : (statusLabels as any)[f]}
                         </button>
                     ))}
                 </div>
