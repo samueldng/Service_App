@@ -1,1 +1,7 @@
 project_id = "ilfhbedqjudbvbcndqdy"
+
+[functions.asaas-create-subscription]
+verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false
