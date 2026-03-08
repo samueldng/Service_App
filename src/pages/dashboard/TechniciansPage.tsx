@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, UserCog, Mail, Lock, User, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, X, UserCog, Mail, Lock, User, Trash2, Copy, CheckCircle2, Link2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -109,6 +109,13 @@ export default function TechniciansPage() {
         toast.success('Credenciais copiadas!');
     };
 
+    const portalUrl = `${window.location.origin}/tecnico`;
+
+    const copyPortalLink = () => {
+        navigator.clipboard.writeText(portalUrl);
+        toast.success('Link do portal copiado!');
+    };
+
     const filtered = technicians.filter(t =>
         t.name.toLowerCase().includes(search.toLowerCase()) ||
         t.email.toLowerCase().includes(search.toLowerCase())
@@ -128,6 +135,35 @@ export default function TechniciansPage() {
                 }}>
                     <Plus size={18} /> Novo Técnico
                 </button>
+            </div>
+            {/* Portal Link Banner */}
+            <div className="glass-card" style={{
+                padding: 'var(--space-4) var(--space-6)', marginBottom: 'var(--space-4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)',
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 211, 238, 0.06) 100%)',
+                border: '1px solid rgba(99, 102, 241, 0.15)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                    <Link2 size={18} style={{ color: 'var(--color-accent-primary)' }} />
+                    <div>
+                        <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>Portal dos Técnicos</span>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', margin: 0 }}>
+                            Envie este link para seus técnicos acessarem o portal
+                        </p>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <code style={{
+                        fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)',
+                        background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-cyan)', fontFamily: 'monospace'
+                    }}>
+                        {portalUrl}
+                    </code>
+                    <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }} onClick={copyPortalLink}>
+                        <Copy size={14} /> Copiar
+                    </button>
+                </div>
             </div>
 
             <div className="glass-card" style={{ padding: 'var(--space-6)' }}>
