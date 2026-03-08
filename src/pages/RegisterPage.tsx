@@ -94,6 +94,14 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="form-group">
+                        <label className="form-label">CPF ou CNPJ</label>
+                        <div className="login-input-wrapper">
+                            <FileText size={18} className="login-input-icon" />
+                            <input type="text" name="cpfCnpj" className="form-input login-input" placeholder="000.000.000-00" value={formData.cpfCnpj} onChange={handleChange} required />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
                         <label className="form-label">Email</label>
                         <div className="login-input-wrapper">
                             <Mail size={18} className="login-input-icon" />
