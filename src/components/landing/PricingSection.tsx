@@ -112,7 +112,7 @@ export default function PricingSection() {
                                 ))}
                             </ul>
                             <Link
-                                to="/register"
+                                to={`/register?plan=${plan.planId}`}
                                 className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} btn-lg`}
                                 style={{ width: '100%' }}
                             >
