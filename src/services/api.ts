@@ -293,7 +293,8 @@ function mapServiceOrderFromDb(d: any): ServiceOrder {
     return {
         ...d,
         equipmentId: d.equipment_id,
-        technicianName: d.technician_name || 'Técnico',
+        technicianId: d.technician_id,
+        technicianName: d.technician_name || '',
         warrantyUntil: d.warranty_until,
         nextMaintenanceDate: d.next_maintenance_date,
         photosBefore: d.photos_before || [],
