@@ -1,8 +1,29 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, X, UserCog, Mail, Lock, User, Trash2, Copy, CheckCircle2, Link2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+
+function getToken(): string | null {
+    return localStorage.getItem('maintqr_token');
+}
+
+async function apiFetch<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+    const token = getToken();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string> || {}),
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: 'Erro de conexão' }));
+        throw new Error(body.error || `Erro ${res.status}`);
+    }
+    return res.json();
+}
 
 interface Technician {
     id: string;
@@ -25,31 +46,21 @@ export default function TechniciansPage() {
     }, []);
 
     const loadTechnicians = async () => {
-        const { data: currentUser } = await supabase.auth.getUser();
-        if (!currentUser.user) return;
-
-        const { data: profile } = await supabase.from('users').select('org_id').eq('id', currentUser.user.id).maybeSingle();
-        if (!profile?.org_id) return;
-
-        const { data, error } = await supabase
-            .from('users')
-            .select('id, name, role, created_at')
-            .eq('org_id', profile.org_id)
-            .eq('role', 'technician')
-            .order('name');
-
-        if (error) { console.error(error); return; }
-
-        // Get emails from auth (we can only see emails through our own org's users)
-        const techList = (data || []).map(d => ({
-            id: d.id,
-            name: d.name,
-            email: '', // Will be filled if available
-            role: d.role,
-            createdAt: d.created_at,
-        }));
-
-        setTechnicians(techList);
+        try {
+            const users = await apiFetch<any[]>('/users');
+            const techs = (users || [])
+                .filter((u: any) => u.role === 'technician')
+                .map((d: any) => ({
+                    id: d.id,
+                    name: d.name,
+                    email: d.email || '',
+                    role: d.role,
+                    createdAt: d.created_at,
+                }));
+            setTechnicians(techs);
+        } catch (err) {
+            console.error('Failed to load technicians:', err);
+        }
     };
 
     const handleCreate = async () => {
@@ -64,44 +75,14 @@ export default function TechniciansPage() {
 
         setLoading(true);
         try {
-            // Get current user's org_id and save current session
-            const { data: { session: adminSession } } = await supabase.auth.getSession();
-            if (!adminSession) throw new Error('Não autenticado');
-
-            const { data: profile } = await supabase.from('users').select('org_id').eq('id', adminSession.user.id).maybeSingle();
-            if (!profile?.org_id) throw new Error('Organização não encontrada');
-
-            // Use standard signUp to create the technician (Supabase handles password correctly)
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                email: form.email,
-                password: form.password,
-                options: {
-                    data: { full_name: form.name }
-                }
+            await apiFetch('/users/technician', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                }),
             });
-
-            if (signUpError) throw signUpError;
-            if (!signUpData.user) throw new Error('Erro ao criar usuário');
-
-            const techUserId = signUpData.user.id;
-
-            // Restore admin session immediately
-            await supabase.auth.setSession({
-                access_token: adminSession.access_token,
-                refresh_token: adminSession.refresh_token
-            });
-
-            // Use SECURITY DEFINER RPC to: confirm email + set org + set role
-            const { error: setupError } = await supabase.rpc('setup_technician', {
-                tech_user_id: techUserId,
-                org_id_param: profile.org_id,
-                tech_name: form.name
-            });
-
-            if (setupError) {
-                console.error('Setup technician error:', setupError);
-                throw new Error('Técnico criado mas houve erro ao configurar. Verifique o banco.');
-            }
 
             setCreatedCredentials({ email: form.email, password: form.password });
             toast.success('Técnico criado com sucesso!');
@@ -115,14 +96,13 @@ export default function TechniciansPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Tem certeza que deseja remover este técnico?')) return;
-        // Use RPC to delete from both auth.users and public.users
-        const { error } = await supabase.rpc('delete_technician', { tech_user_id: id });
-        if (error) {
+        try {
+            await apiFetch(`/users/${id}`, { method: 'DELETE' });
+            setTechnicians(prev => prev.filter(t => t.id !== id));
+            toast.success('Técnico removido');
+        } catch (error: any) {
             toast.error('Erro ao remover: ' + error.message);
-            return;
         }
-        setTechnicians(prev => prev.filter(t => t.id !== id));
-        toast.success('Técnico removido');
     };
 
     const copyCredentials = () => {

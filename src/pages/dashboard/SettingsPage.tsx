@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, CreditCard, Save, CheckCircle2, Building, Upload, ArrowUpCircle, Crown, Zap, Rocket, X, Check } from 'lucide-react';
 import { organizationsApi } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+
 import type { Organization } from '../../types';
 
 const PLAN_DATA: Record<string, { name: string; price: number; priceLabel: string; limit: number | string; features: string[] }> = {
@@ -92,12 +92,18 @@ export default function SettingsPage() {
         if (!file || !org) return;
         setUploading(true);
         try {
-            const ext = file.name.split('.').pop();
-            const filePath = `${org.id}/logo.${ext}`;
-            const { error: uploadError } = await supabase.storage.from('org-logos').upload(filePath, file, { upsert: true });
-            if (uploadError) throw uploadError;
-            const { data: urlData } = supabase.storage.from('org-logos').getPublicUrl(filePath);
-            const logoUrl = urlData.publicUrl + '?t=' + Date.now();
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+            const token = localStorage.getItem('maintqr_token');
+            const formData = new FormData();
+            formData.append('logo', file);
+            const res = await fetch(`${API_URL}/upload/logo`, {
+                method: 'POST',
+                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                body: formData,
+            });
+            if (!res.ok) throw new Error('Erro no upload');
+            const data = await res.json();
+            const logoUrl = data.url + '?t=' + Date.now();
             setOrg({ ...org, logoUrl });
         } catch (error: any) {
             alert('Erro ao fazer upload: ' + error.message);
@@ -110,17 +116,24 @@ export default function SettingsPage() {
         if (!org) return;
         setUpgrading(planKey);
         try {
-            const { data, error } = await supabase.functions.invoke('asaas-create-subscription', {
-                body: {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+            const token = localStorage.getItem('maintqr_token');
+            const res = await fetch(`${API_URL}/asaas/create-subscription`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
                     name: org.name,
                     email: org.email || '',
                     plan: planKey,
                     cpfCnpj: org.document || undefined,
                     upgrade: true,
-                },
+                }),
             });
-
-            if (error) throw error;
+            if (!res.ok) throw new Error('Falha ao processar upgrade');
+            const data = await res.json();
 
             // Update org plan locally
             const newPlan = PLAN_DATA[planKey];

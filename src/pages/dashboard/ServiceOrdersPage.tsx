@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog } from 'lucide-react';
 import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
-import { supabase } from '../../lib/supabase';
 import type { ServiceOrder, Equipment, Client } from '../../types';
 import PhotoCapture from '../../components/PhotoCapture';
 
@@ -34,12 +33,23 @@ export default function ServiceOrdersPage() {
     }, []);
 
     const loadTechnicians = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data: profile } = await supabase.from('users').select('org_id').eq('id', user.id).maybeSingle();
-        if (!profile?.org_id) return;
-        const { data } = await supabase.from('users').select('id, name').eq('org_id', profile.org_id).eq('role', 'technician').order('name');
-        setTechniciansList((data || []).map(d => ({ id: d.id, name: d.name })));
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+            const token = localStorage.getItem('maintqr_token');
+            if (!token) return;
+            const res = await fetch(`${API_URL}/users`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) return;
+            const users = await res.json();
+            setTechniciansList(
+                (users || [])
+                    .filter((u: any) => u.role === 'technician')
+                    .map((d: any) => ({ id: d.id, name: d.name }))
+            );
+        } catch (err) {
+            console.error('Failed to load technicians:', err);
+        }
     };
 
     const getEquipment = (id: string) => equipments.find(e => e.id === id);

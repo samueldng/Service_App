@@ -22,24 +22,30 @@ interface Props {
 }
 
 export default function PaymentBlockedPage({ organization, reason }: Props) {
-    
+
     const [loading, setLoading] = useState(false);
     const plan = organization.subscriptionPlan || 'starter';
 
     const handlePayment = async () => {
         setLoading(true);
         try {
-            // Generate Asaas payment link via edge function
-            const { supabase } = await import('../lib/supabase');
-            const { data, error } = await supabase.functions.invoke('asaas-create-subscription', {
-                body: {
+            // Generate Asaas payment link via API
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+            const token = localStorage.getItem('maintqr_token');
+            const res = await fetch(`${API_URL}/asaas/create-subscription`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
                     name: organization.name,
                     email: organization.email || '',
                     plan,
-                },
+                }),
             });
-
-            if (error) throw error;
+            if (!res.ok) throw new Error('Falha ao gerar link de pagamento');
+            const data = await res.json();
 
             if (data?.paymentLink) {
                 window.open(data.paymentLink, '_blank');
