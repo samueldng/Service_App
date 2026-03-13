@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Image } from 'lucide-react';
 
@@ -16,21 +16,59 @@ export default function PhotoCapture({ label, photos, onChange, maxPhotos = 5 }:
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setShowCamera(true);
-    } catch (err) {
-      console.error('Erro ao acessar câmera:', err);
-      // Fallback to file input
-      fileInputRef.current?.click();
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setShowCamera(false);
+  }, []);
+
+  // Attach stream to video element AFTER React renders the modal
+  useEffect(() => {
+    if (!showCamera) return;
+
+    let cancelled = false;
+
+    const initCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+
+        if (cancelled) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Erro ao acessar câmera:', err);
+        stopCamera();
+        fileInputRef.current?.click();
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showCamera, stopCamera]);
+
+  const startCamera = () => {
+    setShowCamera(true);
   };
 
   const capturePhoto = () => {
@@ -47,14 +85,6 @@ export default function PhotoCapture({ label, photos, onChange, maxPhotos = 5 }:
     stopCamera();
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setShowCamera(false);
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -63,7 +93,6 @@ export default function PhotoCapture({ label, photos, onChange, maxPhotos = 5 }:
       const reader = new FileReader();
       reader.onload = (ev) => {
         const result = ev.target?.result as string;
-        // Compress the image
         const img = new window.Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
@@ -194,7 +223,12 @@ export default function PhotoCapture({ label, photos, onChange, maxPhotos = 5 }:
               ref={videoRef}
               autoPlay
               playsInline
-              style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 'var(--radius-lg)' }}
+              muted
+              onLoadedMetadata={() => videoRef.current?.play()}
+              style={{
+                maxWidth: '100%', maxHeight: '70vh',
+                borderRadius: 'var(--radius-lg)', backgroundColor: '#000'
+              }}
             />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
             <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
