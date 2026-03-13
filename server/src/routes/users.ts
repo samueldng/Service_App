@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { subscriptionGuard, featureGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // POST /api/users/technician — create a technician in the same org
-router.post('/technician', authMiddleware, async (req, res) => {
+router.post('/technician', authMiddleware, subscriptionGuard, featureGuard(['professional', 'enterprise']), async (req, res) => {
     if (req.user!.role !== 'admin') {
         res.status(403).json({ error: 'Apenas administradores podem criar técnicos' });
         return;
@@ -66,7 +67,7 @@ router.post('/technician', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/users/:id — delete a technician (admin only, same org)
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     if (req.user!.role !== 'admin') {
         res.status(403).json({ error: 'Apenas administradores podem remover usuários' });
         return;

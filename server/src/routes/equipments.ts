@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { subscriptionGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -85,7 +86,7 @@ router.get('/public/:qrCodeUid', async (req, res) => {
 });
 
 // POST /api/equipments — create equipment
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
     const { client_id, sector_id, name, brand, model, serial_number, btus, details, install_date, status } = req.body;
 
     if (!client_id || !name || !brand || !model) {
@@ -93,21 +94,36 @@ router.post('/', authMiddleware, async (req, res) => {
         return;
     }
 
-    // Verify client belongs to org
-    const clientCheck = await query(
-        'SELECT id FROM clients WHERE id = $1 AND org_id = $2',
-        [client_id, req.user!.orgId]
-    );
-
-    if (clientCheck.rows.length === 0) {
-        res.status(403).json({ error: 'Cliente não pertence à sua organização' });
-        return;
-    }
-
+    // Verify limit and client in one transaction/queries
     try {
+        const orgInfo = await query('SELECT max_equipments FROM organizations WHERE id = $1', [req.user!.orgId]);
+        const maxEquipments = orgInfo.rows[0]?.max_equipments || 30;
+
+        const countQuery = await query(
+            'SELECT COUNT(e.id) as total FROM equipments e JOIN clients c ON e.client_id = c.id WHERE c.org_id = $1',
+            [req.user!.orgId]
+        );
+        const currentTotal = parseInt(countQuery.rows[0].total, 10);
+
+        if (currentTotal >= maxEquipments) {
+            res.status(403).json({ error: `Limite do plano atingido (${maxEquipments} equipamentos). Faça downgrade ou upgrade do seu plano para adicionar mais.` });
+            return;
+        }
+
+        // Verify client belongs to org
+        const clientCheck = await query(
+            'SELECT id FROM clients WHERE id = $1 AND org_id = $2',
+            [client_id, req.user!.orgId]
+        );
+
+        if (clientCheck.rows.length === 0) {
+            res.status(403).json({ error: 'Cliente não pertence à sua organização' });
+            return;
+        }
+
         const result = await query(
-            `INSERT INTO equipments (client_id, sector_id, name, brand, model, serial_number, btus, details, install_date, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO equipments(client_id, sector_id, name, brand, model, serial_number, btus, details, install_date, status)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
             [client_id, sector_id || null, name, brand, model, serial_number, btus, details, install_date, status || 'active']
         );
@@ -120,7 +136,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/equipments/:id — update equipment
-router.patch('/:id', authMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     const allowedFields = ['client_id', 'sector_id', 'name', 'brand', 'model', 'serial_number', 'btus', 'details', 'install_date', 'status'];
     const updates: string[] = [];
     const values: any[] = [];
@@ -145,8 +161,8 @@ router.patch('/:id', authMiddleware, async (req, res) => {
         const result = await query(
             `UPDATE equipments SET ${updates.join(', ')}
        WHERE id = $${paramIndex}
-       AND client_id IN (SELECT id FROM clients WHERE org_id = $${paramIndex + 1})
-       RETURNING *`,
+       AND client_id IN(SELECT id FROM clients WHERE org_id = $${paramIndex + 1})
+RETURNING * `,
             values
         );
 
@@ -163,12 +179,12 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/equipments/:id — delete equipment
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     try {
         const result = await query(
             `DELETE FROM equipments
        WHERE id = $1
-       AND client_id IN (SELECT id FROM clients WHERE org_id = $2)
+       AND client_id IN(SELECT id FROM clients WHERE org_id = $2)
        RETURNING id`,
             [req.params.id, req.user!.orgId]
         );

@@ -30,15 +30,43 @@ router.post('/register', async (req, res) => {
         await query('BEGIN');
 
         try {
-            // 1. Create organization
+            // 1. Create Asaas Customer
+            const ASAAS_API_URL = process.env.NODE_ENV === 'production' ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/api/v3';
+            const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+
+            let asaasCustomerId = null;
+            if (ASAAS_API_KEY) {
+                try {
+                    const customerRes = await fetch(`${ASAAS_API_URL}/customers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', access_token: ASAAS_API_KEY },
+                        body: JSON.stringify({
+                            name: company,
+                            email,
+                            cpfCnpj, // Can be undefined or passed from body
+                            notificationDisabled: false,
+                        }),
+                    });
+                    if (customerRes.ok) {
+                        const customer = await customerRes.json();
+                        asaasCustomerId = customer.id;
+                    } else {
+                        console.error('Asaas customer creation failed silently:', await customerRes.text());
+                    }
+                } catch (asaasErr) {
+                    console.error('Failed to reach Asaas API:', asaasErr);
+                }
+            }
+
+            // 2. Create organization
             const trialEndsAt = new Date();
             trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
             const orgResult = await query(
-                `INSERT INTO organizations (name, subscription_plan, payment_status, trial_ends_at)
-         VALUES ($1, $2, 'active', $3)
+                `INSERT INTO organizations (name, subscription_plan, payment_status, trial_ends_at, asaas_customer_id, max_equipments)
+         VALUES ($1, $2, 'active', $3, $4, $5)
          RETURNING id`,
-                [company, selectedPlan, trialEndsAt.toISOString()]
+                [company, selectedPlan, trialEndsAt.toISOString(), asaasCustomerId, selectedPlan === 'starter' ? 30 : (selectedPlan === 'professional' ? 150 : 9999)]
             );
             const orgId = orgResult.rows[0].id;
 

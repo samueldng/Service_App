@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { subscriptionGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // POST /api/sectors — create sector
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
     const { name, description, client_id } = req.body;
 
     if (!name || !client_id) {
@@ -57,7 +58,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/sectors/:id — update sector
-router.patch('/:id', authMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     const allowedFields = ['name', 'description', 'client_id'];
     const updates: string[] = [];
     const values: any[] = [];
@@ -100,7 +101,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/sectors/:id — delete sector
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     try {
         const result = await query(
             `DELETE FROM sectors

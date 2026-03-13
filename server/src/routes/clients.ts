@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { subscriptionGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 // POST /api/clients — create client
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
     const { name, document, document_type, email, phone, address } = req.body;
 
     if (!name || !document) {
@@ -63,7 +64,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/clients/:id — update client
-router.patch('/:id', authMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     const allowedFields = ['name', 'document', 'document_type', 'email', 'phone', 'address'];
     const updates: string[] = [];
     const values: any[] = [];
@@ -103,7 +104,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/clients/:id — delete client
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     try {
         const result = await query(
             'DELETE FROM clients WHERE id = $1 AND org_id = $2 RETURNING id',

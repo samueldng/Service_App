@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { subscriptionGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -45,7 +46,7 @@ router.get('/equipment/:equipmentId', authMiddleware, async (req, res) => {
 });
 
 // POST /api/service-orders — create service order
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
     const {
         equipment_id, date, type, status, description,
         technician_id, warranty_until, notes,
@@ -95,7 +96,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/service-orders/:id — update service order
-router.patch('/:id', authMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     const allowedFields = [
         'equipment_id', 'date', 'type', 'status', 'description',
         'technician_id', 'warranty_until', 'notes',
