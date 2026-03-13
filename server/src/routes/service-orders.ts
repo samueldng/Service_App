@@ -82,8 +82,8 @@ router.post('/', authMiddleware, async (req, res) => {
                 equipment_id, date, type, status || 'aberta', description,
                 technician_id || null, warranty_until || null, notes || null,
                 next_maintenance_date || null,
-                photos_before ? JSON.stringify(photos_before) : null,
-                photos_after ? JSON.stringify(photos_after) : null,
+                photos_before || null,
+                photos_after || null,
             ]
         );
 
@@ -107,9 +107,7 @@ router.patch('/:id', authMiddleware, async (req, res) => {
 
     for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-            const value = (field === 'photos_before' || field === 'photos_after')
-                ? JSON.stringify(req.body[field])
-                : req.body[field];
+            const value = req.body[field];
             updates.push(`${field} = $${paramIndex}`);
             values.push(value);
             paramIndex++;
