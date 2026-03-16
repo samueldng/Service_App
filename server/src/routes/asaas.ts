@@ -156,9 +156,26 @@ router.post('/create-subscription', authMiddleware, async (req, res) => {
     }
 });
 
-// POST /api/asaas/webhook — receive Asaas webhook events (no auth required)
+// POST /api/asaas/webhook — receive Asaas webhook events
 router.post('/webhook', async (req, res) => {
     try {
+        const webhookToken = process.env.ASAAS_WEBHOOK_TOKEN;
+        const providedToken = req.headers['asaas-access-token'];
+
+        if (!webhookToken) {
+            console.error('CRITICAL: ASAAS_WEBHOOK_TOKEN is missing in .env');
+            // Allow bypassing in development ONLY if explicitly empty, but in production we should block.
+            // For now, return 500 if not found so the admin knows.
+            res.status(500).json({ error: 'Server misconfiguration: Webhook token not set' });
+            return;
+        }
+
+        if (providedToken !== webhookToken) {
+            console.warn('Unauthorized webhook attempt');
+            res.status(401).json({ error: 'Unauthorized webhook token' });
+            return;
+        }
+
         const payload = req.body;
         const event = payload.event;
 

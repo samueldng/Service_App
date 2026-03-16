@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, MapPin, Cpu, ClipboardList,
-    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings, Loader2, UserCog
+    QrCode, Menu, LogOut, Bell, ChevronLeft, Settings, Loader2, UserCog, Headset
 } from 'lucide-react';
 import { authApi, organizationsApi } from '../services/api';
 import type { Organization, User } from '../types';
@@ -76,11 +76,11 @@ export default function DashboardLayout() {
     };
 
     if (loading) {
-    if (blocked && organization) {
-        return <PaymentBlockedPage organization={organization} reason={blocked} />;
-    }
+        if (blocked && organization) {
+            return <PaymentBlockedPage organization={organization} reason={blocked} />;
+        }
 
-    return (
+        return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg)' }}>
                 <Loader2 size={32} className="spin" style={{ color: 'var(--color-primary)' }} />
             </div>
@@ -121,7 +121,10 @@ export default function DashboardLayout() {
                 </div>
 
                 <nav className="sidebar__nav">
-                    {menuItems.map((item) => {
+                    {menuItems.filter(item => {
+                        if (item.path === '/dashboard/technicians' && organization?.subscriptionPlan === 'starter') return false;
+                        return true;
+                    }).map((item) => {
                         const Icon = item.icon;
                         return (
                             <NavLink
@@ -149,6 +152,10 @@ export default function DashboardLayout() {
                 </nav>
 
                 <div className="sidebar__footer">
+                    <a href="https://wa.me/5599985143916" target="_blank" rel="noopener noreferrer" className="sidebar__link" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <Headset size={20} />
+                        {!collapsed && <span>Suporte</span>}
+                    </a>
                     <button className="sidebar__link" onClick={handleLogout}>
                         <LogOut size={20} />
                         {!collapsed && <span>Sair</span>}

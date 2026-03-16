@@ -53,7 +53,7 @@ export default function Footer() {
 
                 <div className="footer__bottom">
                     <p>&copy; 2026 MaintQR. Todos os direitos reservados.</p>
-                    <p>Feito com 💜 no Brasil</p>
+                    <p>Desenvolvido por <a href="https://logistack.online" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 'bold' }}>LogiStack BR</a></p>
                 </div>
             </div>
         </footer>

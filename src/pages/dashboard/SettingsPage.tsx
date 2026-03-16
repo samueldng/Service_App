@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, CreditCard, Save, CheckCircle2, Building, Upload, ArrowUpCircle, Crown, Zap, Rocket, X, Check } from 'lucide-react';
+import { CreditCard, Save, CheckCircle2, ArrowUpCircle, Crown, Zap, Rocket, X, Check, Building2 } from 'lucide-react';
 import { organizationsApi } from '../../services/api';
 
 import type { Organization } from '../../types';
@@ -48,10 +48,8 @@ export default function SettingsPage() {
     const [org, setOrg] = useState<Organization | null>(null);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgrading, setUpgrading] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         organizationsApi.get()
@@ -87,30 +85,6 @@ export default function SettingsPage() {
         }
     };
 
-    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !org) return;
-        setUploading(true);
-        try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
-            const token = localStorage.getItem('maintqr_token');
-            const formData = new FormData();
-            formData.append('logo', file);
-            const res = await fetch(`${API_URL}/upload/logo`, {
-                method: 'POST',
-                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                body: formData,
-            });
-            if (!res.ok) throw new Error('Erro no upload');
-            const data = await res.json();
-            const logoUrl = data.url + '?t=' + Date.now();
-            setOrg({ ...org, logoUrl });
-        } catch (error: any) {
-            alert('Erro ao fazer upload: ' + error.message);
-        } finally {
-            setUploading(false);
-        }
-    };
 
     const handleUpgrade = async (planKey: string) => {
         if (!org) return;
@@ -222,47 +196,14 @@ export default function SettingsPage() {
                 <motion.div className="glass-card" style={{ padding: 'var(--space-6)' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
                         <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-lg)', background: 'rgba(99, 102, 241, 0.12)', color: 'var(--color-accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Palette size={20} />
+                            <Building2 size={20} />
                         </div>
-                        <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0 }}>Identidade Visual</h2>
+                        <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0 }}>Empresa</h2>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">Nome da Empresa</label>
                         <input className="form-input" value={org.name} onChange={e => setOrg({ ...org, name: e.target.value })} />
-                    </div>
-
-                    <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
-                        <label className="form-label">Logotipo</label>
-                        <div style={{
-                            border: '2px dashed rgba(255,255,255,0.1)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', background: 'rgba(0,0,0,0.2)'
-                        }}>
-                            {org.logoUrl ? (
-                                <img src={org.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain' }} />
-                            ) : (
-                                <div style={{ width: 60, height: 60, borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Building size={24} style={{ color: 'var(--color-text-tertiary)' }} />
-                                </div>
-                            )}
-                            <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
-                            <button className="btn btn-secondary btn-sm" style={{ marginTop: 'var(--space-2)' }} onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                                {uploading ? 'Enviando...' : <><Upload size={14} /> {org.logoUrl ? 'Trocar Logo' : 'Fazer Upload'}</>}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
-                        <label className="form-label">Cor Principal da Marca</label>
-                        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                            <input type="color" value={org.brandColor || '#6366f1'} onChange={e => { setOrg({ ...org, brandColor: e.target.value }); applyBrandColor(e.target.value); }}
-                                style={{ width: 48, height: 48, padding: 0, border: 'none', borderRadius: 'var(--radius-md)', background: 'transparent', cursor: 'pointer' }} />
-                            <input className="form-input" value={org.brandColor || '#6366f1'} onChange={e => { setOrg({ ...org, brandColor: e.target.value }); if (/^#[0-9a-fA-F]{6}$/.test(e.target.value)) applyBrandColor(e.target.value); }}
-                                style={{ flex: 1, fontFamily: 'monospace' }} />
-                        </div>
-                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginTop: 'var(--space-2)' }}>
-                            Aplicada no Portal do Cliente, Dashboard e QR Codes.
-                        </p>
                     </div>
                 </motion.div>
 

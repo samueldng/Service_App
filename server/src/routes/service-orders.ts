@@ -58,6 +58,14 @@ router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
         return;
     }
 
+    const orgQuery = await query('SELECT subscription_plan FROM organizations WHERE id = $1', [req.user!.orgId]);
+    const plan = orgQuery.rows[0]?.subscription_plan || 'starter';
+
+    if (plan === 'starter') {
+        req.body.photos_before = null;
+        req.body.photos_after = null;
+    }
+
     // Verify equipment belongs to org
     const eqCheck = await query(
         `SELECT e.id FROM equipments e
@@ -105,6 +113,14 @@ router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
+
+    const orgQuery = await query('SELECT subscription_plan FROM organizations WHERE id = $1', [req.user!.orgId]);
+    const plan = orgQuery.rows[0]?.subscription_plan || 'starter';
+
+    if (plan === 'starter') {
+        req.body.photos_before = null;
+        req.body.photos_after = null;
+    }
 
     for (const field of allowedFields) {
         if (req.body[field] !== undefined) {

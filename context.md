@@ -22,7 +22,9 @@
 | Framework     | React                               | ^19.2.0    |
 | Linguagem     | TypeScript                          | ~5.9.3     |
 | Build Tool    | Vite                                | ^7.3.1     |
-| Backend/BaaS  | Supabase (PostgreSQL + Auth + RLS)  | ^2.98.0    |
+| Backend/BaaS  | Express.js + PostgreSQL (node-postgres) | ^4.18.2    |
+| JWT Auth      | jsonwebtoken + bcryptjs             | ^9.0.2     |
+| Pagamentos    | Asaas API                           | v3         |
 | Roteamento    | React Router DOM                    | ^7.13.1    |
 | Animações     | Framer Motion                       | ^12.35.0   |
 | Ícones        | Lucide React                        | ^0.577.0   |
@@ -105,7 +107,31 @@ saas_sevice/
     │   │   ├── PricingSection.tsx + .css
     │   │   └── Footer.tsx + .css
     │   └── three/                # Componentes 3D (Three.js)
-    └── assets/
+    ├── /dashboard            → DashboardHome (KPIs, gráficos)
+    ├── /dashboard/clients    → ClientsPage
+    ├── /dashboard/sectors    → SectorsPage
+    ├── /dashboard/equipment  → EquipmentPage
+    ├── /dashboard/service-orders → ServiceOrdersPage
+    └── /dashboard/settings   → SettingsPage
+```
+
+**Backend API (`/server`):**
+```
+server/
+├── .env                          # DATABASE_URL + JWT_SECRET + ASAAS_API_KEY
+├── tsconfig.json                 # TypeScript backend config
+├── src/
+│   ├── index.ts                  # Entry point (Express server)
+│   ├── config/db.ts              # PostgreSQL Pool (pg)
+│   ├── middleware/auth.ts        # Validação de token JWT (orgId + userId)
+│   └── routes/
+│       ├── auth.ts               # Register/Login
+│       ├── organizations.ts      # Dados da org
+│       ├── clients.ts            # CRUD Clientes (RLS lógico via org_id)
+│       ├── equipments.ts         # CRUD Equipamentos + Rota Pública QR Code
+│       ├── service-orders.ts     # CRUD OS
+│       └── asaas.ts              # Transações + Webhook do Asaas
+└── migrations/                   # Scripts SQL para setup/updates no schema
 ```
 
 ---
@@ -336,12 +362,15 @@ User         { id, orgId, name, email, role, avatar? }
 - Podem ter data de garantia e próxima manutenção programada
 - Vinculadas a um equipamento específico
 
-### 8.6 Planos de Assinatura
-- **Starter:** R$ 79/mês — até 30 equipamentos
-- **Professional:** R$ 149/mês — até 150 equipamentos
-- **Enterprise:** R$ 349/mês — equipamentos ilimitados
-- Status de pagamento: `active`, `past_due`, `canceled`
-- Armazenados na tabela `organizations`
+### 8.6 Planos de Assinatura (Asaas API)
+- **Starter:** R$ 59/mês — até 30 equipamentos
+- **Professional:** R$ 149/mês — até 150 equipamentos, permite "Múltiplos Técnicos", botão de enviar OS para Técnico direto pro WhatsApp.
+- **Enterprise:** R$ 349/mês — ilimitado
+- Status do Tenant: Atualizado dinamicamente pelo Webhook do Asaas (`PAYMENT_CONFIRMED`, `PAYMENT_OVERDUE`, `PAYMENT_DELETED`).
+- Ao registrar, a assinatura é criada no Asaas com 7 dias de Trial e data de vencimento correspondente.
+
+### 8.7 Envio para Técnico
+- A partir do plano **Professional**, os administradores dispõem de um botão na OS interagindo com a API nativa do WhatsApp direcionada ao número do técnico. Envia todas as informações formatadas via texto e link seguro para login (puxando o `window.location.origin` dinâmico).
 
 ---
 
@@ -470,9 +499,11 @@ npm run dev
 | Data       | Alteração                                                              |
 |------------|------------------------------------------------------------------------|
 | 2026-03-05 | Documento criado com análise completa do sistema                       |
-| 2026-03-05 | Planos atualizados: Starter R$79 (30 equip), Professional R$149 (150 equip) |
-| 2026-03-05 | Máscaras CPF/CNPJ/telefone + autocomplete UF/cidade (IBGE API)        |
+| 2026-03-05 | Planos atualizados: Starter R$59 (30 equip), Professional R$149 (150 equip) |
 | 2026-03-05 | Correção: Nome do técnico salvo no BD e Etiqueta QR 58mm c/ nome da empresa |
+| 2026-03-13 | **Migração Supabase p/ Backend Express**: API própria em Node.js com pg, bcrypt e rotas JWT |
+| 2026-03-13 | **Adoção Asaas API**: Criação automática de Subscription via API + Recebimento por Webhooks. |
+| 2026-03-13 | **Feature de Restrição Paga**: Tab lateral de Técnicos e "Envio p/ Técnico" (`window.location.origin`) amarrados aos planos Professional+. Edição UI polida (Removido troca de Cor/Logo do painel de Configs e atualizado Footer p/ marca parceira LogiStack). |
 
 ---
 

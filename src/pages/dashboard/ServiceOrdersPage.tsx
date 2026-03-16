@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog } from 'lucide-react';
-import { serviceOrdersApi, equipmentsApi, clientsApi } from '../../services/api';
-import type { ServiceOrder, Equipment, Client } from '../../types';
+import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog, Send } from 'lucide-react';
+import { serviceOrdersApi, equipmentsApi, clientsApi, organizationsApi } from '../../services/api';
+import type { ServiceOrder, Equipment, Client, Organization } from '../../types';
 import PhotoCapture from '../../components/PhotoCapture';
 
 interface TechnicianOption {
@@ -16,10 +16,12 @@ export default function ServiceOrdersPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<string>('all');
+    const [organization, setOrganization] = useState<Organization | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [photosBefore, setPhotosBefore] = useState<string[]>([]);
     const [photosAfter, setPhotosAfter] = useState<string[]>([]);
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+    const [viewingOrder, setViewingOrder] = useState<ServiceOrder | null>(null);
     const [showPhotoModal, setShowPhotoModal] = useState<{ orderId: string; type: 'before' | 'after' } | null>(null);
     const [addingPhotos, setAddingPhotos] = useState<string[]>([]);
     const [techniciansList, setTechniciansList] = useState<TechnicianOption[]>([]);
@@ -29,6 +31,7 @@ export default function ServiceOrdersPage() {
         serviceOrdersApi.getAll().then(setOrders);
         equipmentsApi.getAll().then(setEquipments);
         clientsApi.getAll().then(setClients);
+        organizationsApi.get().then(setOrganization);
         loadTechnicians();
     }, []);
 
@@ -53,6 +56,17 @@ export default function ServiceOrdersPage() {
     };
 
     const getEquipment = (id: string) => equipments.find(e => e.id === id);
+
+    const handleSendToTechnician = (order: ServiceOrder) => {
+        const eq = getEquipment(order.equipmentId);
+        const cli = clients.find(c => c.id === eq?.clientId);
+        const tech = techniciansList.find(t => t.id === order.technicianId);
+        const techName = tech ? tech.name : 'Não Atribuído';
+
+        const text = `*Nova Ordem de Serviço* 🛠️\n\n*Cliente:* ${cli?.name || 'N/A'}\n*Equipamento:* ${eq?.name || 'N/A'}\n*Data:* ${new Date(order.date).toLocaleDateString('pt-BR')}\n*Técnico Atribuído:* ${techName}\n*Descrição:* ${order.description}\n\nAcesse o sistema para ver os detalhes e executar a ordem de serviço:\n${window.location.origin}/login`;
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
 
     const filtered = orders
         .filter(o => filter === 'all' || o.status === filter)
@@ -180,7 +194,7 @@ export default function ServiceOrdersPage() {
                         const hasPhotos = (order.photosBefore && order.photosBefore.length > 0) || (order.photosAfter && order.photosAfter.length > 0);
 
                         return (
-                            <motion.div key={order.id} className="glass-card" style={{ padding: 'var(--space-5)' }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                            <motion.div key={order.id} className="glass-card" style={{ padding: 'var(--space-5)', cursor: 'pointer' }} onClick={() => setViewingOrder(order)} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                                 <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
                                     <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'start', flex: 1 }}>
                                         <div style={{
@@ -222,20 +236,20 @@ export default function ServiceOrdersPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }} onClick={e => e.stopPropagation()}>
                                         {hasPhotos && (
                                             <button
                                                 className="btn btn-ghost btn-icon"
-                                                onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                                                onClick={(e) => { e.stopPropagation(); setExpandedOrder(isExpanded ? null : order.id); }}
                                                 style={{ padding: 'var(--space-1)' }}
                                             >
                                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                             </button>
                                         )}
-                                        {order.status === 'concluida' && (!order.photosAfter || order.photosAfter.length === 0) && (
+                                        {organization?.subscriptionPlan !== 'starter' && order.status === 'concluida' && (!order.photosAfter || order.photosAfter.length === 0) && (
                                             <button
                                                 className="btn btn-secondary"
-                                                onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
+                                                onClick={(e) => { e.stopPropagation(); setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
                                                 style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
                                             >
                                                 <Camera size={14} /> Fotos Depois
@@ -246,7 +260,7 @@ export default function ServiceOrdersPage() {
                                         </span>
                                         {order.status === 'aguardando_aprovacao' && (
                                             <button className="btn btn-primary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
-                                                onClick={() => updateStatus(order.id, 'concluida')}>
+                                                onClick={(e) => { e.stopPropagation(); updateStatus(order.id, 'concluida'); }}>
                                                 ✅ Aprovar
                                             </button>
                                         )}
@@ -254,7 +268,8 @@ export default function ServiceOrdersPage() {
                                             <select
                                                 className="form-input"
                                                 value={order.status}
-                                                onChange={e => updateStatus(order.id, e.target.value as ServiceOrder['status'])}
+                                                onClick={e => e.stopPropagation()}
+                                                onChange={e => { e.stopPropagation(); updateStatus(order.id, e.target.value as ServiceOrder['status']); }}
                                                 style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', width: 'auto' }}
                                             >
                                                 <option value="aberta">Aberta</option>
@@ -287,13 +302,15 @@ export default function ServiceOrdersPage() {
                                                     {(!order.photosAfter || order.photosAfter.length === 0) && (
                                                         <div>
                                                             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginBottom: 'var(--space-2)' }}>Sem fotos do depois</p>
-                                                            <button
-                                                                className="btn btn-secondary"
-                                                                onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
-                                                                style={{ fontSize: 'var(--text-xs)' }}
-                                                            >
-                                                                <Camera size={14} /> Adicionar Fotos
-                                                            </button>
+                                                            {organization?.subscriptionPlan !== 'starter' && (
+                                                                <button
+                                                                    className="btn btn-secondary"
+                                                                    onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
+                                                                    style={{ fontSize: 'var(--text-xs)' }}
+                                                                >
+                                                                    <Camera size={14} /> Adicionar Fotos
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -386,22 +403,26 @@ export default function ServiceOrdersPage() {
                                 </div>
 
                                 {/* Photo Capture Sections */}
-                                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
-                                    <PhotoCapture
-                                        label="Fotos ANTES do Serviço"
-                                        photos={photosBefore}
-                                        onChange={setPhotosBefore}
-                                        maxPhotos={5}
-                                    />
-                                </div>
-                                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
-                                    <PhotoCapture
-                                        label="Fotos DEPOIS do Serviço (opcional)"
-                                        photos={photosAfter}
-                                        onChange={setPhotosAfter}
-                                        maxPhotos={5}
-                                    />
-                                </div>
+                                {organization?.subscriptionPlan !== 'starter' && (
+                                    <>
+                                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
+                                            <PhotoCapture
+                                                label="Fotos ANTES do Serviço"
+                                                photos={photosBefore}
+                                                onChange={setPhotosBefore}
+                                                maxPhotos={5}
+                                            />
+                                        </div>
+                                        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)' }}>
+                                            <PhotoCapture
+                                                label="Fotos DEPOIS do Serviço (opcional)"
+                                                photos={photosAfter}
+                                                onChange={setPhotosAfter}
+                                                maxPhotos={5}
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
                                 <div className="modal__actions">
                                     <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
@@ -440,6 +461,116 @@ export default function ServiceOrdersPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+
+            {/* View OS Details Modal */}
+            <AnimatePresence>
+                {viewingOrder && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setViewingOrder(null)}>
+                        <motion.div className="modal glass-card" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}
+                            style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+                            <div className="modal__header">
+                                <h2>Detalhes da Ordem de Serviço</h2>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setViewingOrder(null)}><X size={20} /></button>
+                            </div>
+                            <div className="modal__form">
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                                    <div>
+                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginBottom: 4 }}>Status</p>
+                                        <span className={`badge ${viewingOrder.status === 'concluida' ? 'badge-success' : viewingOrder.status === 'em_progresso' ? 'badge-warning' : viewingOrder.status === 'aguardando_aprovacao' ? 'badge-info' : 'badge-primary'}`}>
+                                            {statusLabels[viewingOrder.status]}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginBottom: 4 }}>Tipo</p>
+                                        <span style={{ fontWeight: 600 }}>{typeLabels[viewingOrder.type]}</span>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginBottom: 4 }}>Data da OS</p>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Calendar size={14} style={{ color: 'var(--color-text-muted)' }} /> {new Date(viewingOrder.date).toLocaleDateString('pt-BR')}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginBottom: 4 }}>Técnico Responsável</p>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <UserCog size={14} style={{ color: 'var(--color-text-muted)' }} /> {getTechnicianName(viewingOrder.technicianId)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                                    <label className="form-label" style={{ color: 'var(--color-text-tertiary)' }}>Equipamento / Cliente</label>
+                                    <div style={{ padding: 'var(--space-3)', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                                        {(() => {
+                                            const eq = getEquipment(viewingOrder.equipmentId);
+                                            const cli = clients.find(c => c.id === eq?.clientId);
+                                            return (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <span style={{ fontWeight: 600 }}>{eq?.name || 'Desconhecido'}</span>
+                                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Building size={12} /> {cli?.name || 'Cliente Desconhecido'}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                                    <label className="form-label" style={{ color: 'var(--color-text-tertiary)' }}>Descrição do Serviço</label>
+                                    <div style={{ padding: 'var(--space-3)', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                                        <p style={{ margin: 0, fontSize: 'var(--text-sm)', lineHeight: 1.6 }}>{viewingOrder.description}</p>
+                                    </div>
+                                </div>
+
+                                {(viewingOrder.warrantyUntil || viewingOrder.nextMaintenanceDate) && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                                        {viewingOrder.warrantyUntil && (
+                                            <div style={{ padding: 'var(--space-3)', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                                                <p style={{ fontSize: 'var(--text-xs)', color: '#4ade80', marginBottom: 4, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Shield size={12} /> Garantia Até
+                                                </p>
+                                                <span style={{ fontWeight: 600, color: '#bbf7d0' }}>{viewingOrder.warrantyUntil ? new Date(viewingOrder.warrantyUntil).toLocaleDateString('pt-BR') : ''}</span>
+                                            </div>
+                                        )}
+                                        {viewingOrder.nextMaintenanceDate && (
+                                            <div style={{ padding: 'var(--space-3)', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: 'var(--radius-md)' }}>
+                                                <p style={{ fontSize: 'var(--text-xs)', color: '#7dd3fc', marginBottom: 4, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <Calendar size={12} /> Próx. Manutenção
+                                                </p>
+                                                <span style={{ fontWeight: 600, color: '#e0f2fe' }}>{viewingOrder.nextMaintenanceDate ? new Date(viewingOrder.nextMaintenanceDate).toLocaleDateString('pt-BR') : ''}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {((viewingOrder.photosBefore && viewingOrder.photosBefore.length > 0) || (viewingOrder.photosAfter && viewingOrder.photosAfter.length > 0)) && (
+                                    <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+                                        <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 'var(--space-3)', color: 'var(--color-text-secondary)' }}>Fotos do Serviço</h3>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                                            <div>
+                                                <PhotoThumbnails photos={viewingOrder.photosBefore} label="📷 Antes do Serviço" />
+                                            </div>
+                                            <div>
+                                                <PhotoThumbnails photos={viewingOrder.photosAfter} label="✅ Depois do Serviço" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="modal__actions" style={{ marginTop: 'var(--space-6)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-3)' }}>
+                                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setViewingOrder(null)}>Fechar Ficha</button>
+                                    {organization?.subscriptionPlan !== 'starter' && (
+                                        <button className="btn btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={() => handleSendToTechnician(viewingOrder)}>
+                                            <Send size={16} /> Enviar para Técnico
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div >
     );
 }
