@@ -230,7 +230,7 @@ export default function ClientsPage() {
                                             <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-lg)', background: 'rgba(99, 102, 241, 0.12)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 {client.documentType === 'CNPJ' ? <Building size={16} /> : <User size={16} />}
                                             </div>
-                                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{client.name}</span>
+                                            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)', cursor: 'pointer' }} onClick={() => navigate(`/dashboard/clients/${client.id}`)}>{client.name}</span>
                                         </div>
                                     </td>
                                     <td data-label="Documento"><span className={`badge ${client.documentType === 'CNPJ' ? 'badge-primary' : 'badge-info'}`}>{client.document}</span></td>

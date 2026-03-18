@@ -8,6 +8,7 @@ import ClientsPage from './pages/dashboard/ClientsPage';
 import SectorsPage from './pages/dashboard/SectorsPage';
 import EquipmentPage from './pages/dashboard/EquipmentPage';
 import ServiceOrdersPage from './pages/dashboard/ServiceOrdersPage';
+import ClientDetailPage from './pages/dashboard/ClientDetailPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
 import TechniciansPage from './pages/dashboard/TechniciansPage';
 import PublicEquipmentPage from './pages/PublicEquipmentPage';
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardHome />} />
           <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/:id" element={<ClientDetailPage />} />
           <Route path="sectors" element={<SectorsPage />} />
           <Route path="equipment" element={<EquipmentPage />} />
           <Route path="service-orders" element={<ServiceOrdersPage />} />

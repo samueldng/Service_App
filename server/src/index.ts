@@ -15,6 +15,8 @@ import serviceOrdersRoutes from './routes/service-orders.js';
 import usersRoutes from './routes/users.js';
 import asaasRoutes from './routes/asaas.js';
 import uploadRoutes from './routes/upload.js';
+import catalogRoutes from './routes/catalog.js';
+import ordersRoutes from './routes/orders.js';
 
 dotenv.config();
 
@@ -56,6 +58,8 @@ app.use('/api/service-orders', serviceOrdersRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/asaas', asaasRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/catalog', catalogRoutes);
+app.use('/api/orders', ordersRoutes);
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

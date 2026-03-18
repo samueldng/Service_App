@@ -1,4 +1,4 @@
-import type { Organization, Client, Sector, Equipment, ServiceOrder, User } from '../types';
+import type { Organization, Client, Sector, Equipment, ServiceOrder, User, CatalogItem, Order, OrderItem } from '../types';
 
 // ---- API Base Configuration ----
 
@@ -59,6 +59,11 @@ function mapOrgFromDb(d: any): Organization {
         subscriptionPlan: d.subscription_plan, paymentStatus: d.payment_status,
         trialEndsAt: d.trial_ends_at, maxEquipments: d.max_equipments,
         asaasCustomerId: d.asaas_customer_id, asaasSubscriptionId: d.asaas_subscription_id,
+        address: d.address, city: d.city, state: d.state, cep: d.cep,
+        ownerName: d.owner_name,
+        pixKey: d.pix_key, bankName: d.bank_name, bankAgency: d.bank_agency,
+        bankAccount: d.bank_account, bankAccountType: d.bank_account_type,
+        bankHolder: d.bank_holder, orderCounter: d.order_counter,
     };
 }
 
@@ -72,6 +77,17 @@ function mapOrgToDb(updates: Partial<Organization>): any {
     if (updates.brandColor !== undefined) payload.brand_color = updates.brandColor;
     if (updates.subscriptionPlan !== undefined) payload.subscription_plan = updates.subscriptionPlan;
     if (updates.paymentStatus !== undefined) payload.payment_status = updates.paymentStatus;
+    if (updates.address !== undefined) payload.address = updates.address;
+    if (updates.city !== undefined) payload.city = updates.city;
+    if (updates.state !== undefined) payload.state = updates.state;
+    if (updates.cep !== undefined) payload.cep = updates.cep;
+    if (updates.ownerName !== undefined) payload.owner_name = updates.ownerName;
+    if (updates.pixKey !== undefined) payload.pix_key = updates.pixKey;
+    if (updates.bankName !== undefined) payload.bank_name = updates.bankName;
+    if (updates.bankAgency !== undefined) payload.bank_agency = updates.bankAgency;
+    if (updates.bankAccount !== undefined) payload.bank_account = updates.bankAccount;
+    if (updates.bankAccountType !== undefined) payload.bank_account_type = updates.bankAccountType;
+    if (updates.bankHolder !== undefined) payload.bank_holder = updates.bankHolder;
     return payload;
 }
 
@@ -98,6 +114,44 @@ function mapServiceOrderFromDb(d: any): ServiceOrder {
         photosBefore: d.photos_before || [],
         photosAfter: d.photos_after || [],
         createdAt: d.created_at,
+    };
+}
+
+function mapCatalogItemFromDb(d: any): CatalogItem {
+    return {
+        id: d.id, orgId: d.org_id, name: d.name,
+        type: d.type, defaultPrice: parseFloat(d.default_price) || 0,
+        createdAt: d.created_at,
+    };
+}
+
+function mapOrderFromDb(d: any): Order {
+    return {
+        id: d.id, orgId: d.org_id, clientId: d.client_id,
+        equipmentId: d.equipment_id, defect: d.defect, observations: d.observations,
+        status: d.status, subtotal: parseFloat(d.subtotal) || 0,
+        discount: parseFloat(d.discount) || 0, deliveryFee: parseFloat(d.delivery_fee) || 0,
+        total: parseFloat(d.total) || 0, paymentMethod: d.payment_method,
+        warranty: d.warranty, createdAt: d.created_at,
+        clientName: d.client_name, equipmentName: d.equipment_name,
+        items: d.items ? d.items.map(mapOrderItemFromDb) : undefined,
+        // Extra fields from detail JOIN (passed through for PDF)
+        ...(d.client_document && { clientDocument: d.client_document }),
+        ...(d.client_phone && { clientPhone: d.client_phone }),
+        ...(d.client_email && { clientEmail: d.client_email }),
+        ...(d.client_address && { clientAddress: d.client_address }),
+        ...(d.equipment_brand && { equipmentBrand: d.equipment_brand }),
+        ...(d.equipment_model && { equipmentModel: d.equipment_model }),
+        ...(d.equipment_serial_number && { equipmentSerialNumber: d.equipment_serial_number }),
+    } as Order;
+}
+
+function mapOrderItemFromDb(d: any): OrderItem {
+    return {
+        id: d.id, orderId: d.order_id, catalogItemId: d.catalog_item_id,
+        name: d.name, type: d.type, quantity: d.quantity,
+        unitPrice: parseFloat(d.unit_price) || 0,
+        totalPrice: parseFloat(d.total_price) || 0,
     };
 }
 
@@ -381,5 +435,119 @@ export const serviceOrdersApi = {
             body: JSON.stringify(payload),
         });
         return mapServiceOrderFromDb(data) as ServiceOrder;
+    },
+};
+
+// ---- Catalog API ----
+
+export const catalogApi = {
+    getAll: async () => {
+        const data = await apiFetch<any[]>('/catalog');
+        return (data || []).map(mapCatalogItemFromDb);
+    },
+
+    create: async (item: { name: string; type: 'peca' | 'servico'; defaultPrice: number }) => {
+        const data = await apiFetch<any>('/catalog', {
+            method: 'POST',
+            body: JSON.stringify({ name: item.name, type: item.type, default_price: item.defaultPrice }),
+        });
+        return mapCatalogItemFromDb(data);
+    },
+
+    update: async (id: string, updates: Partial<{ name: string; type: string; defaultPrice: number }>) => {
+        const payload: any = {};
+        if (updates.name !== undefined) payload.name = updates.name;
+        if (updates.type !== undefined) payload.type = updates.type;
+        if (updates.defaultPrice !== undefined) payload.default_price = updates.defaultPrice;
+
+        const data = await apiFetch<any>(`/catalog/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+        return mapCatalogItemFromDb(data);
+    },
+
+    delete: async (id: string) => {
+        await apiFetch(`/catalog/${id}`, { method: 'DELETE' });
+    },
+};
+
+// ---- Orders API ----
+
+export const ordersApi = {
+    getAll: async () => {
+        const data = await apiFetch<any[]>('/orders');
+        return (data || []).map(mapOrderFromDb);
+    },
+
+    getByClient: async (clientId: string) => {
+        const data = await apiFetch<any[]>(`/orders/client/${clientId}`);
+        return (data || []).map(mapOrderFromDb);
+    },
+
+    getById: async (id: string) => {
+        const data = await apiFetch<any>(`/orders/${id}`);
+        return mapOrderFromDb(data);
+    },
+
+    create: async (order: {
+        clientId: string;
+        equipmentId?: string;
+        defect?: string;
+        observations?: string;
+        subtotal: number;
+        discount: number;
+        deliveryFee: number;
+        total: number;
+        paymentMethod?: string;
+        warranty?: string;
+        items: { catalogItemId?: string; name: string; type: string; quantity: number; unitPrice: number; totalPrice: number }[];
+    }) => {
+        const payload = {
+            client_id: order.clientId,
+            equipment_id: order.equipmentId || null,
+            defect: order.defect || null,
+            observations: order.observations || null,
+            subtotal: order.subtotal,
+            discount: order.discount,
+            delivery_fee: order.deliveryFee,
+            total: order.total,
+            payment_method: order.paymentMethod || null,
+            warranty: order.warranty || null,
+            items: order.items.map(i => ({
+                catalog_item_id: i.catalogItemId || null,
+                name: i.name,
+                type: i.type,
+                quantity: i.quantity,
+                unit_price: i.unitPrice,
+                total_price: i.totalPrice,
+            })),
+        };
+
+        const data = await apiFetch<any>('/orders', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+        return mapOrderFromDb(data);
+    },
+
+    update: async (id: string, updates: Partial<{ status: string; discount: number; deliveryFee: number; total: number; paymentMethod: string; warranty: string }>) => {
+        const payload: any = {};
+        if (updates.status !== undefined) payload.status = updates.status;
+        if (updates.discount !== undefined) payload.discount = updates.discount;
+        if (updates.deliveryFee !== undefined) payload.delivery_fee = updates.deliveryFee;
+        if (updates.total !== undefined) payload.total = updates.total;
+        if (updates.paymentMethod !== undefined) payload.payment_method = updates.paymentMethod;
+        if (updates.warranty !== undefined) payload.warranty = updates.warranty;
+
+        const data = await apiFetch<any>(`/orders/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+        });
+        return mapOrderFromDb(data);
+    },
+
+    delete: async (id: string) => {
+        await apiFetch(`/orders/${id}`, { method: 'DELETE' });
     },
 };

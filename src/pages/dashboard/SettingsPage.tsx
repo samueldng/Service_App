@@ -201,9 +201,89 @@ export default function SettingsPage() {
                         <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0 }}>Empresa</h2>
                     </div>
 
+                    {/* Basic Info */}
+                    <div className="form-grid" style={{ marginBottom: 'var(--space-4)' }}>
+                        <div className="form-group">
+                            <label className="form-label">Nome da Empresa</label>
+                            <input className="form-input" value={org.name || ''} onChange={e => setOrg({ ...org, name: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">CPF ou CNPJ</label>
+                            <input className="form-input" value={org.document || ''} onChange={e => setOrg({ ...org, document: e.target.value })} placeholder="Ex: 00.000.000/0001-00" />
+                        </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                        <label className="form-label">Nome do Responsável / Assinatura</label>
+                        <input className="form-input" value={org.ownerName || ''} onChange={e => setOrg({ ...org, ownerName: e.target.value })} placeholder="Ex: Francisco Junior" />
+                    </div>
+
+                    <div className="form-grid" style={{ marginBottom: 'var(--space-4)' }}>
+                        <div className="form-group">
+                            <label className="form-label">Telefone / WhatsApp</label>
+                            <input className="form-input" value={org.phone || ''} onChange={e => setOrg({ ...org, phone: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input className="form-input" type="email" value={org.email || ''} onChange={e => setOrg({ ...org, email: e.target.value })} />
+                        </div>
+                    </div>
+
+                    {/* Address */}
+                    <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, marginTop: 'var(--space-6)', marginBottom: 'var(--space-3)' }}>Endereço Completo</h3>
+                    <div className="form-group" style={{ marginBottom: 'var(--space-3)' }}>
+                        <label className="form-label">Logradouro, Bairro, Número</label>
+                        <input className="form-input" value={org.address || ''} onChange={e => setOrg({ ...org, address: e.target.value })} placeholder="Ex: Rua 07, próximo cabeção gás, s/n - Vila Da Paz" />
+                    </div>
+                    <div className="form-grid form-grid-3" style={{ marginBottom: 'var(--space-4)' }}>
+                        <div className="form-group">
+                            <label className="form-label">Cidade</label>
+                            <input className="form-input" value={org.city || ''} onChange={e => setOrg({ ...org, city: e.target.value })} placeholder="Bacabal" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">UF</label>
+                            <input className="form-input" value={org.state || ''} onChange={e => setOrg({ ...org, state: e.target.value })} placeholder="MA" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">CEP</label>
+                            <input className="form-input" value={org.cep || ''} onChange={e => setOrg({ ...org, cep: e.target.value })} placeholder="00000-000" />
+                        </div>
+                    </div>
+
+                    {/* Bank / PIX */}
+                    <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 600, marginTop: 'var(--space-6)', marginBottom: 'var(--space-3)' }}>Dados Bancários & PIX</h3>
+                    <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                        <label className="form-label">Chave PIX</label>
+                        <input className="form-input" value={org.pixKey || ''} onChange={e => setOrg({ ...org, pixKey: e.target.value })} placeholder="Telefone, CPF/CNPJ ou Email" />
+                    </div>
+
+                    <div className="form-grid" style={{ marginBottom: 'var(--space-3)' }}>
+                        <div className="form-group">
+                            <label className="form-label">Banco</label>
+                            <input className="form-input" value={org.bankName || ''} onChange={e => setOrg({ ...org, bankName: e.target.value })} placeholder="Ex: Banco do Brasil" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Agência</label>
+                            <input className="form-input" value={org.bankAgency || ''} onChange={e => setOrg({ ...org, bankAgency: e.target.value })} placeholder="Ex: 0528-2" />
+                        </div>
+                    </div>
+
+                    <div className="form-grid" style={{ marginBottom: 'var(--space-3)' }}>
+                        <div className="form-group">
+                            <label className="form-label">Conta</label>
+                            <input className="form-input" value={org.bankAccount || ''} onChange={e => setOrg({ ...org, bankAccount: e.target.value })} placeholder="Ex: 00055310-7" />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Tipo de Conta</label>
+                            <select className="form-input" value={org.bankAccountType || 'corrente'} onChange={e => setOrg({ ...org, bankAccountType: e.target.value })}>
+                                <option value="corrente">Corrente</option>
+                                <option value="poupanca">Poupança</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div className="form-group">
-                        <label className="form-label">Nome da Empresa</label>
-                        <input className="form-input" value={org.name} onChange={e => setOrg({ ...org, name: e.target.value })} />
+                        <label className="form-label">Titular (Nome / CPF / CNPJ)</label>
+                        <input className="form-input" value={org.bankHolder || ''} onChange={e => setOrg({ ...org, bankHolder: e.target.value })} placeholder="Ex: Empresa Ltda (CNPJ: 00...)" />
                     </div>
                 </motion.div>
 

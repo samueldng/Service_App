@@ -13,6 +13,20 @@ export interface Organization {
   maxEquipments?: number;
   asaasCustomerId?: string;
   asaasSubscriptionId?: string;
+  // Address
+  address?: string;
+  city?: string;
+  state?: string;
+  cep?: string;
+  ownerName?: string;
+  // Bank / PIX
+  pixKey?: string;
+  bankName?: string;
+  bankAgency?: string;
+  bankAccount?: string;
+  bankAccountType?: string;
+  bankHolder?: string;
+  orderCounter?: number;
 }
 
 export interface Client {
@@ -76,4 +90,44 @@ export interface User {
   email: string;
   role: 'admin' | 'technician';
   avatar?: string;
+}
+
+export interface CatalogItem {
+  id: string;
+  orgId: string;
+  name: string;
+  type: 'peca' | 'servico';
+  defaultPrice: number;
+  createdAt: string;
+}
+
+export interface Order {
+  id: string;
+  orgId: string;
+  clientId: string;
+  equipmentId?: string;
+  defect?: string;
+  observations?: string;
+  status: 'pendente' | 'aprovado' | 'em_andamento' | 'concluido' | 'cancelado';
+  subtotal: number;
+  discount: number;
+  deliveryFee: number;
+  total: number;
+  paymentMethod?: string;
+  warranty?: string;
+  items?: OrderItem[];
+  clientName?: string;
+  equipmentName?: string;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  catalogItemId?: string;
+  name: string;
+  type: 'peca' | 'servico';
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
 }

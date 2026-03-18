@@ -33,7 +33,12 @@ router.patch('/:id', authMiddleware, async (req, res) => {
         return;
     }
 
-    const allowedFields = ['name', 'document', 'email', 'phone', 'logo_url', 'brand_color', 'subscription_plan', 'payment_status'];
+    const allowedFields = [
+        'name', 'document', 'email', 'phone', 'logo_url', 'brand_color',
+        'subscription_plan', 'payment_status', 'address', 'city', 'state', 'cep',
+        'owner_name', 'pix_key', 'bank_name', 'bank_agency', 'bank_account',
+        'bank_account_type', 'bank_holder'
+    ];
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
