@@ -281,14 +281,14 @@ export default function ClientDetailPage() {
 
             // Right column header (Email/Phone)
             let rightY = 26;
-            if (org.email) { doc.text(`✉ ${org.email}`, midX, rightY); rightY += 4; }
-            if (org.phone) { doc.text(`📞 ${org.phone}`, midX, rightY); rightY += 4; }
+            if (org.email) { doc.text(`Email: ${org.email}`, midX, rightY); rightY += 4; }
+            if (org.phone) { doc.text(`Tel: ${org.phone}`, midX, rightY); rightY += 4; }
 
             // Date Box (Top Right)
             doc.setFillColor(240, 240, 240);
             doc.rect(pageWidth - 45, 18, 30, 8, 'F');
             doc.setFont('helvetica', 'bold');
-            doc.text(`📅 ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 42, 23.5);
+            doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth - 42, 23.5);
 
             y = Math.max(y, rightY) + 10;
 
