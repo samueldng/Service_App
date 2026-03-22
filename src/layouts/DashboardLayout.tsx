@@ -121,10 +121,7 @@ export default function DashboardLayout() {
                 </div>
 
                 <nav className="sidebar__nav">
-                    {menuItems.filter(item => {
-                        if (item.path === '/dashboard/technicians' && organization?.subscriptionPlan === 'starter') return false;
-                        return true;
-                    }).map((item) => {
+                    {menuItems.map((item) => {
                         const Icon = item.icon;
                         return (
                             <NavLink

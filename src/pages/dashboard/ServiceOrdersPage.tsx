@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog, Send } from 'lucide-react';
+import { Plus, Search, X, ClipboardList, Calendar, Wrench, Shield, Building, Camera, ChevronDown, ChevronUp, UserCog, Send, Lock, ArrowUpCircle } from 'lucide-react';
 import { serviceOrdersApi, equipmentsApi, clientsApi, organizationsApi } from '../../services/api';
 import type { ServiceOrder, Equipment, Client, Organization } from '../../types';
 import PhotoCapture from '../../components/PhotoCapture';
@@ -246,14 +246,25 @@ export default function ServiceOrdersPage() {
                                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                             </button>
                                         )}
-                                        {organization?.subscriptionPlan !== 'starter' && order.status === 'concluida' && (!order.photosAfter || order.photosAfter.length === 0) && (
-                                            <button
-                                                className="btn btn-secondary"
-                                                onClick={(e) => { e.stopPropagation(); setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
-                                                style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
-                                            >
-                                                <Camera size={14} /> Fotos Depois
-                                            </button>
+                                        {order.status === 'concluida' && (!order.photosAfter || order.photosAfter.length === 0) && (
+                                            organization?.subscriptionPlan !== 'starter' ? (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={(e) => { e.stopPropagation(); setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
+                                                    style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)' }}
+                                                >
+                                                    <Camera size={14} /> Fotos Depois
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={(e) => { e.stopPropagation(); window.location.href = '/dashboard/settings'; }}
+                                                    style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-3)', opacity: 0.7 }}
+                                                    title="Recurso exclusivo do Plano Professional"
+                                                >
+                                                    <Lock size={14} /> Fotos Depois
+                                                </button>
+                                            )
                                         )}
                                         <span className={`badge ${order.status === 'concluida' ? 'badge-success' : order.status === 'em_progresso' ? 'badge-warning' : order.status === 'aguardando_aprovacao' ? 'badge-info' : 'badge-primary'}`}>
                                             {statusLabels[order.status]}
@@ -302,13 +313,21 @@ export default function ServiceOrdersPage() {
                                                     {(!order.photosAfter || order.photosAfter.length === 0) && (
                                                         <div>
                                                             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic', marginBottom: 'var(--space-2)' }}>Sem fotos do depois</p>
-                                                            {organization?.subscriptionPlan !== 'starter' && (
+                                                            {organization?.subscriptionPlan !== 'starter' ? (
                                                                 <button
                                                                     className="btn btn-secondary"
                                                                     onClick={() => { setShowPhotoModal({ orderId: order.id, type: 'after' }); setAddingPhotos([]); }}
                                                                     style={{ fontSize: 'var(--text-xs)' }}
                                                                 >
                                                                     <Camera size={14} /> Adicionar Fotos
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className="btn btn-secondary"
+                                                                    onClick={() => { window.location.href = '/dashboard/settings'; }}
+                                                                    style={{ fontSize: 'var(--text-xs)', opacity: 0.7 }}
+                                                                >
+                                                                    <Lock size={14} /> Upgrade para fotos
                                                                 </button>
                                                             )}
                                                         </div>
@@ -403,7 +422,7 @@ export default function ServiceOrdersPage() {
                                 </div>
 
                                 {/* Photo Capture Sections */}
-                                {organization?.subscriptionPlan !== 'starter' && (
+                                {organization?.subscriptionPlan !== 'starter' ? (
                                     <>
                                         <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
                                             <PhotoCapture
@@ -422,6 +441,26 @@ export default function ServiceOrdersPage() {
                                             />
                                         </div>
                                     </>
+                                ) : (
+                                    <div style={{
+                                        borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)',
+                                        background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%)',
+                                        border: '1px solid rgba(167, 139, 250, 0.2)', borderRadius: 'var(--radius-lg)',
+                                        padding: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                                    }}>
+                                        <Lock size={18} style={{ color: '#a78bfa', flexShrink: 0 }} />
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontWeight: 600, color: '#ddd6fe', margin: 0, fontSize: 'var(--text-sm)' }}>
+                                                Anexo de fotos — Plano Professional
+                                            </p>
+                                            <p style={{ fontSize: 'var(--text-xs)', color: 'rgba(221, 214, 254, 0.6)', margin: 0 }}>
+                                                Faça upgrade para anexar fotos antes e depois do serviço
+                                            </p>
+                                        </div>
+                                        <button className="btn btn-primary btn-sm" onClick={() => { window.location.href = '/dashboard/settings'; }} style={{ flexShrink: 0 }}>
+                                            <ArrowUpCircle size={14} /> Upgrade
+                                        </button>
+                                    </div>
                                 )}
 
                                 <div className="modal__actions">
@@ -560,9 +599,13 @@ export default function ServiceOrdersPage() {
 
                                 <div className="modal__actions" style={{ marginTop: 'var(--space-6)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-3)' }}>
                                     <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setViewingOrder(null)}>Fechar Ficha</button>
-                                    {organization?.subscriptionPlan !== 'starter' && (
+                                    {organization?.subscriptionPlan !== 'starter' ? (
                                         <button className="btn btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} onClick={() => handleSendToTechnician(viewingOrder)}>
                                             <Send size={16} /> Enviar para Técnico
+                                        </button>
+                                    ) : (
+                                        <button className="btn btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: 0.7 }} onClick={() => { window.location.href = '/dashboard/settings'; }}>
+                                            <Lock size={16} /> Enviar para Técnico (PRO)
                                         </button>
                                     )}
                                 </div>

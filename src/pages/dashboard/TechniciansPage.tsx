@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, X, UserCog, Mail, Lock, User, Trash2, Copy, CheckCircle2, Link2 } from 'lucide-react';
+import { Plus, Search, X, UserCog, Mail, Lock, User, Trash2, Copy, CheckCircle2, Link2, ArrowUpCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { organizationsApi } from '../../services/api';
+import type { Organization } from '../../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
 
@@ -34,15 +37,20 @@ interface Technician {
 }
 
 export default function TechniciansPage() {
+    const navigate = useNavigate();
     const [technicians, setTechnicians] = useState<Technician[]>([]);
     const [search, setSearch] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', password: '' });
     const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
+    const [organization, setOrganization] = useState<Organization | null>(null);
+
+    const isPro = organization ? ['professional', 'pro', 'enterprise'].includes(organization.subscriptionPlan) : true;
 
     useEffect(() => {
         loadTechnicians();
+        organizationsApi.get().then(data => { if (data) setOrganization(data); }).catch(() => { });
     }, []);
 
     const loadTechnicians = async () => {
@@ -130,14 +138,53 @@ export default function TechniciansPage() {
                     <h1>Técnicos</h1>
                     <p>Gerencie os técnicos da sua equipe</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => {
-                    setForm({ name: '', email: '', password: '' });
-                    setCreatedCredentials(null);
-                    setShowModal(true);
-                }}>
-                    <Plus size={18} /> Novo Técnico
-                </button>
+                {isPro ? (
+                    <button className="btn btn-primary" onClick={() => {
+                        setForm({ name: '', email: '', password: '' });
+                        setCreatedCredentials(null);
+                        setShowModal(true);
+                    }}>
+                        <Plus size={18} /> Novo Técnico
+                    </button>
+                ) : null}
             </div>
+
+            {/* PRO Plan Gate Banner */}
+            {!isPro && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-card"
+                    style={{
+                        padding: 'var(--space-5)', marginBottom: 'var(--space-4)',
+                        background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(139, 92, 246, 0.06) 100%)',
+                        border: '1px solid rgba(167, 139, 250, 0.25)',
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                        <div style={{
+                            width: 40, height: 40, borderRadius: '50%',
+                            background: 'rgba(167, 139, 250, 0.2)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <Lock size={20} style={{ color: '#a78bfa' }} />
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 600, color: '#ddd6fe', margin: 0 }}>
+                                Recurso exclusivo do Plano Professional
+                            </p>
+                            <p style={{ fontSize: 'var(--text-xs)', color: 'rgba(221, 214, 254, 0.7)', margin: 0 }}>
+                                Faça upgrade para gerenciar técnicos e atribuir ordens de serviço
+                            </p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard/settings')}>
+                        <ArrowUpCircle size={16} /> Fazer Upgrade
+                    </button>
+                </motion.div>
+            )}
             {/* Portal Link Banner */}
             <div className="glass-card" style={{
                 padding: 'var(--space-4)', marginBottom: 'var(--space-4)',
@@ -201,7 +248,7 @@ export default function TechniciansPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(tech.id)} style={{ color: 'var(--color-rose)', flexShrink: 0 }}>
+                                <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(tech.id)} style={{ color: 'var(--color-rose)', flexShrink: 0, display: isPro ? 'flex' : 'none' }}>
                                     <Trash2 size={16} />
                                 </button>
                             </motion.div>

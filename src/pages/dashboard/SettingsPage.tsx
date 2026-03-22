@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CreditCard, Save, CheckCircle2, ArrowUpCircle, Crown, Zap, Rocket, X, Check, Building2 } from 'lucide-react';
+import { CreditCard, Save, CheckCircle2, ArrowUpCircle, Crown, Zap, Rocket, X, Check, Building2, Upload, Image, Trash2 } from 'lucide-react';
 import { organizationsApi } from '../../services/api';
 
 import type { Organization } from '../../types';
@@ -50,6 +50,7 @@ export default function SettingsPage() {
     const [saved, setSaved] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgrading, setUpgrading] = useState<string | null>(null);
+    const [logoUploading, setLogoUploading] = useState(false);
 
     useEffect(() => {
         organizationsApi.get()
@@ -85,6 +86,45 @@ export default function SettingsPage() {
         }
     };
 
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !org) return;
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Arquivo muito grande. Máximo 5MB.');
+            return;
+        }
+        setLogoUploading(true);
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
+            const token = localStorage.getItem('maintqr_token');
+            const formData = new FormData();
+            formData.append('logo', file);
+            const res = await fetch(`${API_URL}/upload/logo`, {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: formData,
+            });
+            if (!res.ok) throw new Error('Falha no upload');
+            const data = await res.json();
+            const updated = await organizationsApi.update(org.id, { logoUrl: data.url });
+            setOrg(updated);
+        } catch (err: any) {
+            alert('Erro ao enviar logo: ' + err.message);
+        } finally {
+            setLogoUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleLogoRemove = async () => {
+        if (!org) return;
+        try {
+            const updated = await organizationsApi.update(org.id, { logoUrl: '' });
+            setOrg(updated);
+        } catch (err: any) {
+            alert('Erro ao remover logo: ' + err.message);
+        }
+    };
 
     const handleUpgrade = async (planKey: string) => {
         if (!org) return;
@@ -199,6 +239,57 @@ export default function SettingsPage() {
                             <Building2 size={20} />
                         </div>
                         <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0 }}>Empresa</h2>
+                    </div>
+
+                    {/* Logo Upload */}
+                    <div style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)', background: 'rgba(255,255,255,0.02)' }}>
+                        <label className="form-label" style={{ marginBottom: 'var(--space-3)', display: 'block' }}>Logo da Empresa</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                            {org.logoUrl ? (
+                                <div style={{ position: 'relative' }}>
+                                    <img
+                                        src={org.logoUrl.startsWith('http') ? org.logoUrl : `${(import.meta.env.VITE_API_URL || 'http://localhost:3333').replace('/api', '')}${org.logoUrl}`}
+                                        alt="Logo"
+                                        style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)' }}
+                                    />
+                                    <button
+                                        onClick={handleLogoRemove}
+                                        style={{
+                                            position: 'absolute', top: -8, right: -8,
+                                            width: 24, height: 24, borderRadius: '50%',
+                                            background: 'var(--color-rose)', border: 'none',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer', color: '#fff',
+                                        }}
+                                        title="Remover logo"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    width: 80, height: 80, borderRadius: 'var(--radius-md)',
+                                    border: '2px dashed rgba(255,255,255,0.15)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: 'var(--color-text-muted)',
+                                }}>
+                                    <Image size={28} />
+                                </div>
+                            )}
+                            <div style={{ flex: 1, minWidth: 180 }}>
+                                <label
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                                >
+                                    <Upload size={16} />
+                                    {logoUploading ? 'Enviando...' : org.logoUrl ? 'Trocar Logo' : 'Enviar Logo'}
+                                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} disabled={logoUploading} />
+                                </label>
+                                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 'var(--space-2) 0 0' }}>
+                                    PNG, JPG ou SVG. Máx 5MB. Aparecerá no PDF de orçamento.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Basic Info */}

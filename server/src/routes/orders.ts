@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { subscriptionGuard } from '../middleware/subscriptionGuard.js';
+import { subscriptionGuard, featureGuard } from '../middleware/subscriptionGuard.js';
 
 const router = Router();
 
@@ -89,7 +89,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 // POST /api/orders — create order with items
-router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
+router.post('/', authMiddleware, subscriptionGuard, featureGuard(['professional', 'pro', 'enterprise']), async (req, res) => {
     const {
         client_id, equipment_id, defect, observations,
         subtotal, discount, delivery_fee, total,
@@ -172,7 +172,7 @@ router.post('/', authMiddleware, subscriptionGuard, async (req, res) => {
 });
 
 // PATCH /api/orders/:id — update order
-router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
+router.patch('/:id', authMiddleware, subscriptionGuard, featureGuard(['professional', 'pro', 'enterprise']), async (req, res) => {
     const allowedFields = [
         'equipment_id', 'defect', 'observations', 'status',
         'subtotal', 'discount', 'delivery_fee', 'total',
@@ -210,7 +210,38 @@ router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
             return;
         }
 
-        res.json(result.rows[0]);
+        const order = result.rows[0];
+
+        // If items are provided, replace them
+        if (req.body.items && Array.isArray(req.body.items)) {
+            await query('DELETE FROM order_items WHERE order_id = $1', [order.id]);
+
+            for (const item of req.body.items) {
+                await query(
+                    `INSERT INTO order_items (order_id, catalog_item_id, name, type, quantity, unit_price, total_price)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [
+                        order.id,
+                        item.catalog_item_id || null,
+                        item.name,
+                        item.type,
+                        item.quantity || 1,
+                        item.unit_price,
+                        item.total_price,
+                    ]
+                );
+            }
+        }
+
+        const itemsResult = await query(
+            'SELECT * FROM order_items WHERE order_id = $1 ORDER BY created_at',
+            [order.id]
+        );
+
+        res.json({
+            ...order,
+            items: itemsResult.rows,
+        });
     } catch (error: any) {
         console.error('Update order error:', error);
         res.status(500).json({ error: 'Erro ao atualizar pedido' });
@@ -218,7 +249,7 @@ router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
 });
 
 // DELETE /api/orders/:id — delete order (cascade deletes items)
-router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
+router.delete('/:id', authMiddleware, subscriptionGuard, featureGuard(['professional', 'pro', 'enterprise']), async (req, res) => {
     try {
         const result = await query(
             'DELETE FROM orders WHERE id = $1 AND org_id = $2 RETURNING id',

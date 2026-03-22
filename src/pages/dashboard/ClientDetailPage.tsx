@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { clientsApi, equipmentsApi, catalogApi, ordersApi, organizationsApi } from '../../services/api';
-import type { Client, Equipment, CatalogItem, Order } from '../../types';
+import type { Client, Equipment, CatalogItem, Order, Organization } from '../../types';
 import { jsPDF } from 'jspdf';
 import './ClientDetailPage.css';
 
@@ -48,6 +48,7 @@ export default function ClientDetailPage() {
     const [paymentMethod, setPaymentMethod] = useState('');
     const [warranty, setWarranty] = useState('');
     const [saving, setSaving] = useState(false);
+    const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
 
     // Catalog state
     const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
@@ -57,10 +58,12 @@ export default function ClientDetailPage() {
     const [newCatalogName, setNewCatalogName] = useState('');
     const [newCatalogType, setNewCatalogType] = useState<'peca' | 'servico'>('servico');
     const [newCatalogPrice, setNewCatalogPrice] = useState('');
+    const [organization, setOrganization] = useState<Organization | null>(null);
 
     useEffect(() => {
         if (!id) return;
         loadData();
+        organizationsApi.get().then(data => { if (data) setOrganization(data); }).catch(() => { });
     }, [id]);
 
     const loadData = async () => {
@@ -91,7 +94,8 @@ export default function ClientDetailPage() {
 
     // Computed
     const subtotal = orderItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    const total = Math.max(0, subtotal - discount + deliveryFee);
+    const discountAmount = subtotal * (discount / 100);
+    const total = Math.max(0, subtotal - discountAmount + deliveryFee);
 
     const selectedEquipment = equipments.find(e => e.id === selectedEquipmentId);
 
@@ -119,6 +123,7 @@ export default function ClientDetailPage() {
         setDeliveryFee(0);
         setPaymentMethod('');
         setWarranty('');
+        setEditingOrderId(null);
         setShowOrderForm(true);
     };
 
@@ -176,32 +181,50 @@ export default function ClientDetailPage() {
 
         setSaving(true);
         try {
-            const created = await ordersApi.create({
-                clientId: client.id,
-                equipmentId: selectedEquipmentId || undefined,
-                defect: defect || undefined,
-                observations: observations || undefined,
-                subtotal,
-                discount,
-                deliveryFee,
-                total,
-                paymentMethod: paymentMethod || undefined,
-                warranty: warranty || undefined,
-                items: orderItems,
-            });
+            if (editingOrderId) {
+                await ordersApi.update(editingOrderId, {
+                    equipmentId: selectedEquipmentId || undefined,
+                    defect: defect || undefined,
+                    observations: observations || undefined,
+                    subtotal,
+                    discount,
+                    deliveryFee,
+                    total,
+                    paymentMethod: paymentMethod || undefined,
+                    warranty: warranty || undefined,
+                    items: orderItems,
+                });
+                toast.success('Pedido atualizado com sucesso!');
+                setEditingOrderId(null);
+                setShowOrderForm(false);
+            } else {
+                const created = await ordersApi.create({
+                    clientId: client.id,
+                    equipmentId: selectedEquipmentId || undefined,
+                    defect: defect || undefined,
+                    observations: observations || undefined,
+                    subtotal,
+                    discount,
+                    deliveryFee,
+                    total,
+                    paymentMethod: paymentMethod || undefined,
+                    warranty: warranty || undefined,
+                    items: orderItems,
+                });
+                setShowOrderForm(false);
+                toast.success('Pedido salvo com sucesso!');
+
+                // Prompt PDF generation
+                // Auto-generate PDF for pending orders
+                if (created.status === 'pendente') {
+                    toast.success('Gerando PDF da proposta...');
+                    await generatePDFForOrder(created.id);
+                }
+            }
 
             // Reload orders list to get equipment_name from JOIN
             ordersApi.getByClient(id!).then(data => setOrders(data)).catch(() => { });
 
-            setShowOrderForm(false);
-            toast.success('Pedido salvo com sucesso!');
-
-            // Prompt PDF generation
-            // Auto-generate PDF for pending orders
-            if (created.status === 'pendente') {
-                toast.success('Gerando PDF da proposta...');
-                await generatePDFForOrder(created.id);
-            }
         } catch (err: any) {
             toast.error(err.message || 'Erro ao salvar pedido');
         } finally {
@@ -226,6 +249,37 @@ export default function ClientDetailPage() {
         }
     };
 
+    const handleEditOrder = async (orderId: string) => {
+        setActionOrderId(null);
+        toast.loading('Carregando dados...', { id: 'edit' });
+        try {
+            const data = await ordersApi.getById(orderId);
+            setEditingOrderId(data.id);
+            setSelectedEquipmentId(data.equipmentId || '');
+            setDefect(data.defect || '');
+            setObservations(data.observations || '');
+            setDiscount(data.discount || 0);
+            setDeliveryFee(data.deliveryFee || 0);
+            setPaymentMethod(data.paymentMethod || '');
+            setWarranty(data.warranty || '');
+
+            setOrderItems(data.items?.map(i => ({
+                catalogItemId: i.catalogItemId,
+                name: i.name,
+                type: i.type,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                totalPrice: i.totalPrice,
+            })) || []);
+
+            setShowOrderForm(true);
+            toast.dismiss('edit');
+        } catch (err: any) {
+            toast.dismiss('edit');
+            toast.error(err.message || 'Erro ao carregar pedido para edi\u00e7\u00e3o');
+        }
+    };
+
     const handleDownloadPdf = async (orderId: string) => {
         setActionOrderId(null);
         toast.loading('Gerando PDF...', { id: 'pdf' });
@@ -239,222 +293,351 @@ export default function ClientDetailPage() {
 
     const generatePDFForOrder = async (orderId: string) => {
         try {
-            // Fetch order with full details
             const fullOrder = await ordersApi.getById(orderId) as any;
             const items = fullOrder.items || [];
 
-            // Separate items by type
             const services = items.filter((i: any) => i.type === 'servico');
             const materials = items.filter((i: any) => i.type === 'peca');
-
             const servicesTotal = services.reduce((acc: number, item: any) => acc + Number(item.totalPrice || item.total_price), 0);
             const materialsTotal = materials.reduce((acc: number, item: any) => acc + Number(item.totalPrice || item.total_price), 0);
 
-            // Fetch organization details
             let org: any = {};
-            try {
-                const fetchedOrg = await organizationsApi.get();
-                if (fetchedOrg) org = fetchedOrg;
-            } catch { /* ignore */ }
+            try { const fetched = await organizationsApi.get(); if (fetched) org = fetched; } catch { }
 
             const doc = new jsPDF();
-            const pageWidth = doc.internal.pageSize.getWidth();
-            let y = 20;
+            const pw = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            const contentW = pw - margin * 2;
 
-            // --- HEADER ---
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.text(org.name || 'Empresa', 15, y);
-            y += 6;
+            // Color palette (blue)
+            const blue = { r: 26, g: 82, b: 118 };
+            const blueLight = { r: 214, g: 234, b: 248 };
+            const blueMid = { r: 46, g: 134, b: 193 };
+            const dark = { r: 33, g: 37, b: 41 };
+            const muted = { r: 120, g: 130, b: 140 };
 
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
+            let y = 15;
 
-            const leftX = 15;
-            const midX = 110;
+            // Blue top accent line
+            doc.setFillColor(blue.r, blue.g, blue.b);
+            doc.rect(0, 0, pw, 3, 'F');
 
-            // Left column header
-            doc.text(`${(org.ownerName || '').toUpperCase()} ${org.document ? `CPF/CNPJ: ${org.document}` : ''}`, leftX, y);
-            if (org.address) { y += 4; doc.text(org.address, leftX, y); }
-            if (org.city || org.state) { y += 4; doc.text(`${org.city || ''} - ${org.state || ''}`, leftX, y); }
-            if (org.cep) { y += 4; doc.text(`CEP ${org.cep}`, leftX, y); }
+            // Logo
+            let logoW = 0;
+            if (org.logoUrl) {
+                try {
+                    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
+                    const logoFullUrl = org.logoUrl.startsWith('http') ? org.logoUrl : `${API_URL.replace('/api', '')}${org.logoUrl}`;
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    await new Promise<void>((resolve, reject) => {
+                        img.onload = () => resolve();
+                        img.onerror = () => reject();
+                        img.src = logoFullUrl;
+                    });
+                    const logoMaxW = 32;
+                    const logoMaxH = 28;
+                    const ratio = Math.min(logoMaxW / img.width, logoMaxH / img.height);
+                    logoW = img.width * ratio;
+                    const logoH = img.height * ratio;
+                    doc.addImage(img, 'PNG', margin, y, logoW, logoH);
+                } catch { logoW = 0; }
+            }
 
-            // Right column header (Email/Phone)
-            let rightY = 26;
-            if (org.email) { doc.text(`Email: ${org.email}`, midX, rightY); rightY += 4; }
-            if (org.phone) { doc.text(`Tel: ${org.phone}`, midX, rightY); rightY += 4; }
+            // Company info
+            const infoX = logoW > 0 ? margin + logoW + 6 : margin;
+            const infoMaxW = 90;
 
-            // Date Box (Top Right)
-            doc.setFillColor(240, 240, 240);
-            doc.rect(pageWidth - 45, 18, 30, 8, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.text(new Date().toLocaleDateString('pt-BR'), pageWidth - 42, 23.5);
-
-            y = Math.max(y, rightY) + 10;
-
-            // --- TITLE BAR ---
-            doc.setFillColor(220, 220, 220); // Gray background
-            doc.rect(15, y, pageWidth - 30, 10, 'F');
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
+            doc.setTextColor(blue.r, blue.g, blue.b);
+            doc.text(org.name || 'Empresa', infoX, y + 5);
+
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(muted.r, muted.g, muted.b);
+
+            let infoY = y + 10;
+            if (org.ownerName || org.document) {
+                const ownerLine = [org.ownerName, org.document ? `CPF/CNPJ: ${org.document}` : ''].filter(Boolean).join(' \u00b7 ');
+                const wrapped = doc.splitTextToSize(ownerLine, infoMaxW);
+                doc.text(wrapped, infoX, infoY);
+                infoY += wrapped.length * 3.5;
+            }
+            if (org.address) { doc.text(org.address, infoX, infoY); infoY += 3.5; }
+            if (org.city || org.state) { doc.text(`${org.city || ''} \u2013 ${org.state || ''}${org.cep ? `, CEP ${org.cep}` : ''}`, infoX, infoY); infoY += 3.5; }
+            if (org.email) { doc.text(org.email, infoX, infoY); infoY += 3.5; }
+            if (org.phone) { doc.text(`Tel: ${org.phone}`, infoX, infoY); infoY += 3.5; }
+
+            // Date badge (top-right)
+            const dateBadgeW = 36;
+            const dateBadgeH = 14;
+            const dateBadgeX = pw - margin - dateBadgeW;
+            doc.setFillColor(blueLight.r, blueLight.g, blueLight.b);
+            doc.roundedRect(dateBadgeX, y, dateBadgeW, dateBadgeH, 2, 2, 'F');
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(6.5);
+            doc.setTextColor(blueMid.r, blueMid.g, blueMid.b);
+            doc.text('DATA DE EMISS\u00c3O', dateBadgeX + dateBadgeW / 2, y + 4.5, { align: 'center' });
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(blue.r, blue.g, blue.b);
+            doc.text(new Date().toLocaleDateString('pt-BR'), dateBadgeX + dateBadgeW / 2, y + 10.5, { align: 'center' });
+
+            y = Math.max(infoY, y + 28) + 6;
+
+            // Separator
+            doc.setDrawColor(blueLight.r, blueLight.g, blueLight.b);
+            doc.setLineWidth(0.5);
+            doc.line(margin, y, pw - margin, y);
+            y += 8;
+
+            // Title bar
+            doc.setFillColor(blue.r, blue.g, blue.b);
+            doc.roundedRect(margin, y, contentW, 10, 1.5, 1.5, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(255, 255, 255);
             const orderNumber = fullOrder.order_number || fullOrder.id?.substring(0, 4) || '001';
             const year = new Date(fullOrder.created_at || new Date()).getFullYear();
-            doc.text(`Orçamento ${String(orderNumber).padStart(3, '0')}-${year}`, 18, y + 7);
+            doc.text(`Or\u00e7amento ${String(orderNumber).padStart(3, '0')}-${year}`, margin + 5, y + 7);
             y += 16;
 
-            // --- CLIENT ---
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Cliente: `, 15, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(fullOrder.client_name || fullOrder.clientName || client?.name || '', 30, y);
-            y += 10;
-
-            const drawTableHeader = (title: string, yPos: number) => {
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text(title, 15, yPos);
-
-                let hy = yPos + 6;
-                doc.setFontSize(8);
-                doc.setTextColor(150, 150, 150);
-                doc.text('Descrição', 15, hy);
-                doc.text('Unidade', 100, hy);
-                doc.text('Preço unitário', 130, hy);
-                doc.text('Qtd.', 160, hy);
-                doc.text('Preço', 190, hy, { align: 'right' });
-                doc.setTextColor(0, 0, 0);
-                doc.line(15, hy + 2, pageWidth - 15, hy + 2);
-                return hy + 7;
-            };
-
-            const drawItems = (itemsList: any[], startY: number) => {
-                let currentY = startY;
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                for (const item of itemsList) {
-                    if (currentY > 270) { doc.addPage(); currentY = 20; }
-                    doc.text(item.name.substring(0, 45), 15, currentY);
-                    doc.text('un', 100, currentY); // fixed unit
-                    doc.text(formatCurrency(item.unitPrice || item.unit_price), 130, currentY);
-                    doc.text(String(item.quantity || 1), 160, currentY);
-                    doc.text(formatCurrency(item.totalPrice || item.total_price), 190, currentY, { align: 'right' });
-                    currentY += 6;
-                }
-                return currentY + 4;
-            };
-
-            // --- SERVICES ---
-            if (services.length > 0) {
-                y = drawTableHeader('Serviços', y);
-                y = drawItems(services, y);
-            }
-
-            // --- MATERIALS ---
-            if (materials.length > 0) {
-                y = drawTableHeader('Materiais', y);
-                y = drawItems(materials, y);
-            }
-
-            // --- TOTALS BLOCK ---
-            y += 4;
-            const totalsX = 100;
-
+            // Client
+            doc.setTextColor(blue.r, blue.g, blue.b);
             doc.setFontSize(9);
-            // Services Total
-            doc.setFillColor(248, 248, 248);
-            doc.rect(totalsX, y, pageWidth - 15 - totalsX, 6, 'F');
-            doc.text('Serviços', totalsX + 2, y + 4.5);
-            doc.text(formatCurrency(servicesTotal), 190, y + 4.5, { align: 'right' });
-            y += 6;
+            doc.setFont('helvetica', 'bold');
+            doc.text('CLIENTE', margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(dark.r, dark.g, dark.b);
+            doc.setFontSize(10);
+            doc.text(fullOrder.client_name || fullOrder.clientName || client?.name || '', margin + 22, y);
+            y += 8;
 
-            // Materials Total
-            doc.setFillColor(248, 248, 248);
-            doc.rect(totalsX, y, pageWidth - 15 - totalsX, 6, 'F');
-            doc.text('Materiais', totalsX + 2, y + 4.5);
-            doc.text(formatCurrency(materialsTotal), 190, y + 4.5, { align: 'right' });
-            y += 6;
+            // Table helpers
+            const colDesc = margin;
+            const colUnit = 95;
+            const colPrice = 125;
+            const colQty = 155;
+            const colTotal = pw - margin;
 
-            // Discount/Fee if exist
+            const drawSectionHeader = (title: string, yPos: number) => {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(blue.r, blue.g, blue.b);
+                doc.text(title, margin, yPos);
+                yPos += 6;
+                doc.setFillColor(blueLight.r, blueLight.g, blueLight.b);
+                doc.rect(margin, yPos - 3.5, contentW, 6, 'F');
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(blue.r, blue.g, blue.b);
+                doc.text('Descri\u00e7\u00e3o', colDesc + 2, yPos);
+                doc.text('Un.', colUnit, yPos);
+                doc.text('Pre\u00e7o Unit.', colPrice, yPos);
+                doc.text('Qtd.', colQty, yPos);
+                doc.text('Pre\u00e7o', colTotal, yPos, { align: 'right' });
+                return yPos + 6;
+            };
+
+            const drawRows = (itemsList: any[], startY: number) => {
+                let cy = startY;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.setTextColor(dark.r, dark.g, dark.b);
+                for (let i = 0; i < itemsList.length; i++) {
+                    if (cy > 270) { doc.addPage(); cy = 20; }
+                    const item = itemsList[i];
+                    if (i % 2 === 0) {
+                        doc.setFillColor(250, 252, 255);
+                        doc.rect(margin, cy - 3.5, contentW, 6, 'F');
+                    }
+                    doc.text(item.name.substring(0, 50), colDesc + 2, cy);
+                    doc.text('un', colUnit, cy);
+                    doc.text(formatCurrency(item.unitPrice || item.unit_price), colPrice, cy);
+                    doc.text(String(item.quantity || 1), colQty + 2, cy);
+                    doc.text(formatCurrency(item.totalPrice || item.total_price), colTotal, cy, { align: 'right' });
+                    cy += 6;
+                }
+                return cy + 2;
+            };
+
+            if (services.length > 0) {
+                y = drawSectionHeader('Servi\u00e7os', y);
+                y = drawRows(services, y);
+            }
+            if (materials.length > 0) {
+                y = drawSectionHeader('Materiais', y);
+                y = drawRows(materials, y);
+            }
+
+            // Problem description block (left side, next to totals)
+            const defectText = fullOrder.defect || fullOrder.description || '';
+            const obsText = fullOrder.observations || '';
+            if (defectText || obsText) {
+                y += 2;
+                // Light blue bordered box for problem description
+                const descBoxX = margin;
+                const descBoxW = colPrice - 10 - margin;
+                const descStartY = y;
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(blue.r, blue.g, blue.b);
+                doc.text('Problema Relatado', descBoxX + 3, y + 4);
+                y += 7;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(dark.r, dark.g, dark.b);
+
+                if (defectText) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(muted.r, muted.g, muted.b);
+                    doc.text('Defeito:', descBoxX + 3, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(dark.r, dark.g, dark.b);
+                    const wrappedDefect = doc.splitTextToSize(defectText, descBoxW - 8);
+                    doc.text(wrappedDefect, descBoxX + 3, y + 3.5);
+                    y += 3.5 + wrappedDefect.length * 3.2;
+                }
+                if (obsText) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7);
+                    doc.setTextColor(muted.r, muted.g, muted.b);
+                    doc.text('Observa\u00e7\u00f5es:', descBoxX + 3, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(dark.r, dark.g, dark.b);
+                    const wrappedObs = doc.splitTextToSize(obsText, descBoxW - 8);
+                    doc.text(wrappedObs, descBoxX + 3, y + 3.5);
+                    y += 3.5 + wrappedObs.length * 3.2;
+                }
+
+                // Draw border around the description box
+                const descBoxH = y - descStartY + 3;
+                doc.setDrawColor(blueLight.r, blueLight.g, blueLight.b);
+                doc.setLineWidth(0.4);
+                doc.roundedRect(descBoxX, descStartY, descBoxW, descBoxH, 1.5, 1.5, 'S');
+                y += 4;
+            }
+
+
+            // Totals
+            y += 2;
+            const totX = colPrice - 5;
+            const totW = pw - margin - totX;
+            doc.setFontSize(8.5);
+
+            const drawTotalRow = (label: string, value: string, bold = false, accent = false) => {
+                if (accent) {
+                    doc.setFillColor(blue.r, blue.g, blue.b);
+                    doc.rect(totX, y - 3.5, totW, 8, 'F');
+                    doc.setTextColor(255, 255, 255);
+                } else {
+                    doc.setFillColor(blueLight.r, blueLight.g, blueLight.b);
+                    doc.rect(totX, y - 3, totW, 6, 'F');
+                    doc.setTextColor(dark.r, dark.g, dark.b);
+                }
+                doc.setFont('helvetica', bold ? 'bold' : 'normal');
+                doc.text(label, totX + 3, y + (accent ? 1 : 0));
+                doc.text(value, colTotal, y + (accent ? 1 : 0), { align: 'right' });
+                y += accent ? 10 : 6.5;
+            };
+
+            drawTotalRow('Servi\u00e7os', formatCurrency(servicesTotal));
+            drawTotalRow('Materiais', formatCurrency(materialsTotal));
             if (fullOrder.discount > 0) {
-                doc.setFillColor(248, 248, 248);
-                doc.rect(totalsX, y, pageWidth - 15 - totalsX, 6, 'F');
-                doc.text('Desconto', totalsX + 2, y + 4.5);
-                doc.text(`- ${formatCurrency(fullOrder.discount)}`, 190, y + 4.5, { align: 'right' });
-                y += 6;
+                const discAmt = (servicesTotal + materialsTotal) * (fullOrder.discount / 100);
+                drawTotalRow(`Desconto (${fullOrder.discount}%)`, `- ${formatCurrency(discAmt)}`);
             }
             if (fullOrder.delivery_fee > 0 || fullOrder.deliveryFee > 0) {
-                const fee = fullOrder.deliveryFee || fullOrder.delivery_fee;
-                doc.setFillColor(248, 248, 248);
-                doc.rect(totalsX, y, pageWidth - 15 - totalsX, 6, 'F');
-                doc.text('Taxa de Entrega', totalsX + 2, y + 4.5);
-                doc.text(formatCurrency(fee), 190, y + 4.5, { align: 'right' });
-                y += 6;
+                drawTotalRow('Taxa de Entrega', formatCurrency(fullOrder.deliveryFee || fullOrder.delivery_fee));
             }
+            drawTotalRow('Total', formatCurrency(fullOrder.total), true, true);
 
-            // Grand Total
-            doc.setFillColor(220, 220, 220);
-            doc.rect(totalsX, y, pageWidth - 15 - totalsX, 8, 'F');
+            // Payment
+            y += 2;
+            if (y > 240) { doc.addPage(); y = 20; }
+
+            doc.setFillColor(blueLight.r, blueLight.g, blueLight.b);
+            doc.roundedRect(margin, y, contentW, 8, 1.5, 1.5, 'F');
             doc.setFont('helvetica', 'bold');
-            doc.text('Total', totalsX + 2, y + 5.5);
-            doc.text(formatCurrency(fullOrder.total), 190, y + 5.5, { align: 'right' });
+            doc.setFontSize(10);
+            doc.setTextColor(blue.r, blue.g, blue.b);
+            doc.text('Pagamento', margin + 4, y + 5.5);
+            y += 13;
+
+            doc.setFontSize(8);
+            doc.setTextColor(dark.r, dark.g, dark.b);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Meios de pagamento', margin, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(muted.r, muted.g, muted.b);
+            const methodsText = 'Transfer\u00eancia banc\u00e1ria, dinheiro, cart\u00e3o de cr\u00e9dito, cart\u00e3o de d\u00e9bito ou PIX.';
+            doc.text(doc.splitTextToSize(methodsText, 85), margin, y + 4);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(blue.r, blue.g, blue.b);
+            doc.text('Chave PIX', 120, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(dark.r, dark.g, dark.b);
+            doc.text(org.pixKey || '\u2013', 120, y + 4);
             y += 14;
 
-            // --- PAYMENT BLOCK ---
-            doc.setFillColor(240, 240, 240);
-            doc.rect(15, y, pageWidth - 30, 8, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.text('Pagamento', 18, y + 5.5);
-            y += 12;
+            if (org.bankName) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                doc.setTextColor(blue.r, blue.g, blue.b);
+                doc.text('Dados Banc\u00e1rios', margin, y);
+                y += 4;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7.5);
+                doc.setTextColor(muted.r, muted.g, muted.b);
+                doc.text(`${org.bankName || '\u2013'}  \u00b7  Ag: ${org.bankAgency || '\u2013'}  \u00b7  Conta: ${org.bankAccount || '\u2013'} (${org.bankAccountType === 'poupanca' ? 'Poupan\u00e7a' : 'Corrente'})`, margin, y);
+                y += 3.5;
+                doc.text(`Titular: ${org.bankHolder || '\u2013'}`, margin, y);
+                y += 8;
+            }
 
-            doc.setFontSize(9);
-            // Methods
-            doc.text('Meios de pagamento', 15, y);
-            const methodsText = 'Transferência bancária, dinheiro, cartão de crédito, cartão de débito ou pix.';
+            // Footer / Signature
+            if (y > 252) { doc.addPage(); y = 40; }
+            y += 6;
+            doc.setDrawColor(blueLight.r, blueLight.g, blueLight.b);
+            doc.setLineWidth(0.3);
+            doc.line(margin, y, pw - margin, y);
+            y += 10;
+
+            doc.setFontSize(8.5);
+            doc.setTextColor(muted.r, muted.g, muted.b);
             doc.setFont('helvetica', 'normal');
-            doc.text(doc.splitTextToSize(methodsText, 90), 15, y + 5);
-
-            // PIX Key
-            doc.setFont('helvetica', 'bold');
-            doc.text('PIX', 120, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(org.pixKey || '-', 120, y + 5);
-
+            const cityStr = org.city ? `${org.city}, ` : '';
+            doc.text(`${cityStr}${new Date().toLocaleDateString('pt-BR')}`, pw / 2, y, { align: 'center' });
             y += 16;
 
-            // Bank Data
-            doc.setFont('helvetica', 'bold');
-            doc.text('Dados bancários', 15, y);
+            doc.setDrawColor(blue.r, blue.g, blue.b);
+            doc.setLineWidth(0.4);
+            doc.line(pw / 2 - 40, y, pw / 2 + 40, y);
             y += 5;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.text(`Banco: ${org.bankName || '-'}`, 15, y); y += 4;
-            doc.text(`Agência: ${org.bankAgency || '-'}`, 15, y); y += 4;
-            doc.text(`Conta: ${org.bankAccount || '-'}`, 15, y); y += 4;
-            doc.text(`Tipo de conta: ${org.bankAccountType === 'poupanca' ? 'Poupança' : 'Corrente'}`, 15, y); y += 4;
-            doc.text(`Titular da conta: ${org.bankHolder || '-'}`, 15, y); y += 12;
-
-            // --- FOOTER SIGNATURE ---
-            if (y > 250) { doc.addPage(); y = 40; }
-
-            doc.setFontSize(9);
-            const dateStr = new Date().toLocaleDateString('pt-BR');
-            const cityStr = org.city ? `${org.city}, ` : '';
-            doc.text(`${cityStr}${dateStr}`, pageWidth / 2, y, { align: 'center' });
-
-            y += 20;
-            doc.line(pageWidth / 2 - 40, y, pageWidth / 2 + 40, y);
-            y += 4;
             doc.setFont('helvetica', 'bold');
-            doc.text(org.name || 'Empresa', pageWidth / 2, y, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setTextColor(blue.r, blue.g, blue.b);
+            doc.text(org.name || 'Empresa', pw / 2, y, { align: 'center' });
             if (org.ownerName) {
                 y += 4;
                 doc.setFont('helvetica', 'normal');
-                doc.text(org.ownerName, pageWidth / 2, y, { align: 'center' });
+                doc.setFontSize(8);
+                doc.setTextColor(muted.r, muted.g, muted.b);
+                doc.text(org.ownerName, pw / 2, y, { align: 'center' });
             }
 
-            // Save PDF
+            // Blue bottom accent
+            const pageH = doc.internal.pageSize.getHeight();
+            doc.setFillColor(blue.r, blue.g, blue.b);
+            doc.rect(0, pageH - 3, pw, 3, 'F');
+
             doc.save(`Orcamento_${String(orderNumber).padStart(3, '0')}_${client?.name?.replace(/\s+/g, '_') || 'cliente'}.pdf`);
             toast.success('PDF gerado com sucesso!');
         } catch (err: any) {
@@ -886,11 +1069,11 @@ export default function ClientDetailPage() {
                                             <span>{formatCurrency(subtotal)}</span>
                                         </div>
                                         <div className="order-summary__row">
-                                            <span>Desconto (R$)</span>
+                                            <span>Desconto (%)</span>
                                             <input
                                                 type="number" className="form-input"
                                                 style={{ width: '120px', textAlign: 'right', padding: 'var(--space-1) var(--space-2)' }}
-                                                value={discount || ''} min={0} step="0.01"
+                                                value={discount || ''} min={0} max={100} step="1"
                                                 onChange={e => setDiscount(parseFloat(e.target.value) || 0)}
                                             />
                                         </div>
@@ -960,6 +1143,13 @@ export default function ClientDetailPage() {
                                     onClick={() => handleViewOrder(actionOrderId)}
                                 >
                                     <ShoppingCart size={18} /> Consultar Pedido
+                                </button>
+                                <button
+                                    className="btn btn-secondary"
+                                    style={{ width: '100%', justifyContent: 'center', padding: 'var(--space-4)' }}
+                                    onClick={() => handleEditOrder(actionOrderId)}
+                                >
+                                    <FileText size={18} /> Editar Pedido
                                 </button>
                                 <button
                                     className="btn btn-secondary"

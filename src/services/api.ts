@@ -531,14 +531,28 @@ export const ordersApi = {
         return mapOrderFromDb(data);
     },
 
-    update: async (id: string, updates: Partial<{ status: string; discount: number; deliveryFee: number; total: number; paymentMethod: string; warranty: string }>) => {
+    update: async (id: string, updates: Partial<{ equipmentId: string; defect: string; observations: string; status: string; subtotal: number; discount: number; deliveryFee: number; total: number; paymentMethod: string; warranty: string; items: { catalogItemId?: string; name: string; type: string; quantity: number; unitPrice: number; totalPrice: number }[] }>) => {
         const payload: any = {};
+        if (updates.equipmentId !== undefined) payload.equipment_id = updates.equipmentId || null;
+        if (updates.defect !== undefined) payload.defect = updates.defect || null;
+        if (updates.observations !== undefined) payload.observations = updates.observations || null;
         if (updates.status !== undefined) payload.status = updates.status;
+        if (updates.subtotal !== undefined) payload.subtotal = updates.subtotal;
         if (updates.discount !== undefined) payload.discount = updates.discount;
         if (updates.deliveryFee !== undefined) payload.delivery_fee = updates.deliveryFee;
         if (updates.total !== undefined) payload.total = updates.total;
-        if (updates.paymentMethod !== undefined) payload.payment_method = updates.paymentMethod;
-        if (updates.warranty !== undefined) payload.warranty = updates.warranty;
+        if (updates.paymentMethod !== undefined) payload.payment_method = updates.paymentMethod || null;
+        if (updates.warranty !== undefined) payload.warranty = updates.warranty || null;
+        if (updates.items !== undefined) {
+            payload.items = updates.items.map((i: any) => ({
+                catalog_item_id: i.catalogItemId || null,
+                name: i.name,
+                type: i.type,
+                quantity: i.quantity,
+                unit_price: i.unitPrice,
+                total_price: i.totalPrice,
+            }));
+        }
 
         const data = await apiFetch<any>(`/orders/${id}`, {
             method: 'PATCH',
