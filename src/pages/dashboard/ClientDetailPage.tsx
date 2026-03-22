@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, User, CreditCard, ShoppingCart, Plus, Search, X,
-    Package, Wrench, Trash2, FileText, BookOpen, Download
+    Package, Wrench, Trash2, FileText, BookOpen, Download, Lock, ArrowUpCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { clientsApi, equipmentsApi, catalogApi, ordersApi, organizationsApi } from '../../services/api';
@@ -724,7 +724,35 @@ export default function ClientDetailPage() {
                     </motion.div>
                 )}
 
-                {activeTab === 'orders' && !showOrderForm && !viewingOrder && (
+                {activeTab === 'orders' && organization?.subscriptionPlan === 'starter' && (
+                    <motion.div key="orders-locked" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                        <div className="glass-card" style={{
+                            padding: 'var(--space-8)', textAlign: 'center',
+                            background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%)',
+                            border: '1px solid rgba(167, 139, 250, 0.2)',
+                        }}>
+                            <div style={{
+                                width: 64, height: 64, borderRadius: '50%', margin: '0 auto var(--space-4)',
+                                background: 'rgba(167, 139, 250, 0.15)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Lock size={28} style={{ color: '#a78bfa' }} />
+                            </div>
+                            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: '#ddd6fe', marginBottom: 'var(--space-2)' }}>
+                                Pedidos & Orçamentos — Plano Professional
+                            </h3>
+                            <p style={{ fontSize: 'var(--text-sm)', color: 'rgba(221, 214, 254, 0.6)', marginBottom: 'var(--space-5)', maxWidth: 420, margin: '0 auto var(--space-5)' }}>
+                                Crie orçamentos profissionais em PDF, gerencie pedidos e catálogo de peças e serviços. Faça upgrade para desbloquear.
+                            </p>
+                            <button className="btn btn-primary" onClick={() => window.location.href = '/dashboard/settings'}
+                                style={{ gap: 'var(--space-2)' }}>
+                                <ArrowUpCircle size={18} /> Fazer Upgrade
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'orders' && organization?.subscriptionPlan !== 'starter' && !showOrderForm && !viewingOrder && (
                     <motion.div key="orders-list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-4)' }}>
                             <button className="btn btn-primary" onClick={openNewOrder}>
@@ -770,7 +798,7 @@ export default function ClientDetailPage() {
                 )}
 
                 {/* Order Detail View */}
-                {activeTab === 'orders' && viewingOrder && (
+                {activeTab === 'orders' && organization?.subscriptionPlan !== 'starter' && viewingOrder && (
                     <motion.div key="order-detail" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
                             <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Detalhes do Pedido</h2>
@@ -921,7 +949,7 @@ export default function ClientDetailPage() {
                     </motion.div>
                 )}
 
-                {activeTab === 'orders' && showOrderForm && (
+                {activeTab === 'orders' && organization?.subscriptionPlan !== 'starter' && showOrderForm && (
                     <motion.div key="order-form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
                             <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>Novo Pedido</h2>
