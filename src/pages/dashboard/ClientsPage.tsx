@@ -202,6 +202,7 @@ export default function ClientsPage() {
     // City autocomplete handlers
     const handleCityInput = (value: string) => {
         setCityQuery(value);
+        setForm(p => ({ ...p, city: value }));
         setCitySuggestions(filterCities(allCities, value).slice(0, 15));
         setShowCityDropdown(true);
     };
