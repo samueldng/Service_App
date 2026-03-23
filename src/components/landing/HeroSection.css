@@ -68,9 +68,9 @@
 .qr-grid-css {
     display: grid;
     grid-template-columns: repeat(21, 1fr);
-    gap: 12px;
-    width: 600px;
-    height: 600px;
+    gap: 24px;
+    width: 800px;
+    height: 800px;
     transform: rotateX(45deg) rotateZ(15deg);
     transform-style: preserve-3d;
 }

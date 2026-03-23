@@ -66,7 +66,7 @@ export async function getCitiesByUF(uf: string): Promise<City[]> {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
         
         const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${key}/municipios?orderBy=nome`, {
             signal: controller.signal
@@ -80,7 +80,30 @@ export async function getCitiesByUF(uf: string): Promise<City[]> {
         citiesCache.set(key, cities);
         return cities;
     } catch (error) {
-        console.error('Erro ao buscar cidades do IBGE:', error);
+        console.warn('IBGE falhou. Tentando fallback para CDN do Cidades.json...', error);
+        try {
+            // Requisita a ID do Estado
+            const estRes = await fetch('https://raw.githubusercontent.com/felipefdl/cidades-estados-brasil-json/master/Estados.json');
+            const estData = await estRes.json();
+            const estObj = estData.find((e: any) => e.Sigla === key);
+            
+            if (estObj) {
+                // Requisita Cidades filtrando por Estado ID
+                const cidRes = await fetch('https://raw.githubusercontent.com/felipefdl/cidades-estados-brasil-json/master/Cidades.json');
+                const cidData = await cidRes.json();
+                
+                const fallbackCities: City[] = cidData
+                    .filter((c: any) => c.Estado === estObj.ID)
+                    .map((c: any) => ({ nome: c.Nome }));
+                
+                if (fallbackCities.length > 0) {
+                    citiesCache.set(key, fallbackCities);
+                    return fallbackCities;
+                }
+            }
+        } catch (fbError) {
+            console.error('Erro crítico: Falha no IBGE e no Fallback do repositório', fbError);
+        }
         return [];
     }
 }
