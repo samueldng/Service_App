@@ -73,7 +73,15 @@ export default function EquipmentPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Excluir equipamento?')) { await equipmentsApi.delete(id); setEquipments(prev => prev.filter(e => e.id !== id)); setViewing(null); }
+        if (confirm('Tem certeza que deseja excluir? Esta ação não pode ser desfeita.')) {
+            try {
+                await equipmentsApi.delete(id);
+                setEquipments(prev => prev.filter(e => e.id !== id));
+                setViewing(null);
+            } catch (error: any) {
+                alert(error.response?.data?.error || error.message || 'Erro ao excluir registro.');
+            }
+        }
     };
 
     const printQR = async (eq: Equipment) => {

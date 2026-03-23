@@ -197,6 +197,10 @@ router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
         res.json({ success: true });
     } catch (error: any) {
         console.error('Delete equipment error:', error);
+        if (error.code === '23503') {
+            res.status(400).json({ error: 'Não é possível excluir este registro pois existem itens (Ordens de Serviço ou Equipamentos) vinculados a ele.' });
+            return;
+        }
         res.status(500).json({ error: 'Erro ao deletar equipamento' });
     }
 });

@@ -153,9 +153,13 @@ export default function ClientsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza que deseja excluir este cliente?')) {
-            await clientsApi.delete(id);
-            setClients(prev => prev.filter(c => c.id !== id));
+        if (confirm('Tem certeza que deseja excluir? Esta ação não pode ser desfeita.')) {
+            try {
+                await clientsApi.delete(id);
+                setClients(prev => prev.filter(c => c.id !== id));
+            } catch (error: any) {
+                alert(error.response?.data?.error || error.message || 'Erro ao excluir registro.');
+            }
         }
     };
 

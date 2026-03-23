@@ -39,7 +39,14 @@ export default function SectorsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Tem certeza?')) { await sectorsApi.delete(id); setSectors(prev => prev.filter(s => s.id !== id)); }
+        if (confirm('Tem certeza que deseja excluir? Esta ação não pode ser desfeita.')) {
+            try {
+                await sectorsApi.delete(id);
+                setSectors(prev => prev.filter(s => s.id !== id));
+            } catch (error: any) {
+                alert(error.response?.data?.error || error.message || 'Erro ao excluir registro.');
+            }
+        }
     };
 
     // Group sectors by client
