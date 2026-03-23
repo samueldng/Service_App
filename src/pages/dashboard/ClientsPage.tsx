@@ -75,12 +75,26 @@ export default function ClientsPage() {
     const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.document.includes(search));
 
     const parseAddress = (address: string) => {
-        // Parse "Rua X, 123 - Cidade/UF" format
+        if (!address) return { street: '', city: '', uf: '' };
+        // Parse "Rua X, 123 - Cidade/UF" or "Rua X - UF" format
         const parts = address.split(' - ');
         const street = parts[0] || '';
         const cityUf = parts[1] || '';
-        const cityUfParts = cityUf.split('/');
-        return { street, city: cityUfParts[0]?.trim() || '', uf: cityUfParts[1]?.trim() || '' };
+
+        if (cityUf.includes('/')) {
+            const cityUfParts = cityUf.split('/');
+            return { street, city: cityUfParts[0]?.trim() || '', uf: cityUfParts[1]?.trim() || '' };
+        }
+
+        // No '/' separator — check if it's a bare UF abbreviation (2 letters)
+        const trimmed = cityUf.trim();
+        const knownUFs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+        if (trimmed.length === 2 && knownUFs.includes(trimmed.toUpperCase())) {
+            return { street, city: '', uf: trimmed.toUpperCase() };
+        }
+
+        // Otherwise treat as city only
+        return { street, city: trimmed, uf: '' };
     };
 
     const buildAddress = (street: string, city: string, uf: string) => {
