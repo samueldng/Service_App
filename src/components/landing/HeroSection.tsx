@@ -1,9 +1,6 @@
-import { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import QRScene from '../three/QRScene';
 import './HeroSection.css';
 
 export default function HeroSection() {
@@ -16,11 +13,18 @@ export default function HeroSection() {
             </div>
 
             <div className="hero__canvas-wrapper">
-                <Suspense fallback={null}>
-                    <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
-                        <QRScene />
-                    </Canvas>
-                </Suspense>
+                <div className="qr-grid-css">
+                    {Array.from({ length: 49 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="qr-grid-css__dot"
+                            style={{
+                                animationDelay: `${(i * 0.08) % 2}s`,
+                                opacity: Math.random() > 0.35 ? 1 : 0,
+                            }}
+                        />
+                    ))}
+                </div>
             </div>
 
             <div className="hero__content">
