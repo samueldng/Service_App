@@ -65,7 +65,15 @@ export async function getCitiesByUF(uf: string): Promise<City[]> {
     if (citiesCache.has(key)) return citiesCache.get(key)!;
 
     try {
-        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${key}/municipios?orderBy=nome`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        
+        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${key}/municipios?orderBy=nome`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!res.ok) throw new Error('Falha ao buscar cidades');
         const data = await res.json();
         const cities: City[] = data.map((c: any) => ({ nome: c.nome }));

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, X, Cpu, QrCode, Printer, Copy, ExternalLink } from 'lucide-react';
 import { equipmentsApi, sectorsApi, clientsApi } from '../../services/api';
 import type { Equipment, Sector, Client } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
 import { QRCodeSVG } from 'qrcode.react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -51,21 +50,24 @@ export default function EquipmentPage() {
     };
 
     const handleSave = async () => {
+        if (!form.name || !form.brand || !form.model) {
+            alert('Preencha os campos obrigatórios: Nome, Marca e Modelo');
+            return;
+        }
+
         if (editing) {
             const updated = await equipmentsApi.update(editing.id, {
                 ...form, btus: form.btus ? parseInt(form.btus) : undefined,
             });
             setEquipments(prev => prev.map(e => e.id === editing.id ? updated : e));
         } else {
-            const uid = `MQR-${uuidv4().slice(0, 6).toUpperCase()}`;
-            const newEq: Equipment = {
-                id: `eq-${uuidv4().slice(0, 8)}`, ...form,
+            const created = await equipmentsApi.create({
+                ...form,
                 btus: form.btus ? parseInt(form.btus) : undefined,
-                qrCodeUid: uid, installDate: new Date().toISOString().split('T')[0],
-                status: 'active', createdAt: new Date().toISOString().split('T')[0],
-            };
-            await equipmentsApi.create(newEq);
-            setEquipments(prev => [...prev, newEq]);
+                installDate: new Date().toISOString().split('T')[0],
+                status: 'active',
+            });
+            setEquipments(prev => [...prev, created as Equipment]);
         }
         setShowModal(false);
     };

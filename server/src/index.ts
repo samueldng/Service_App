@@ -4,7 +4,8 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+
+dotenv.config();
 
 import authRoutes from './routes/auth.js';
 import organizationsRoutes from './routes/organizations.js';
@@ -18,13 +19,10 @@ import uploadRoutes from './routes/upload.js';
 import catalogRoutes from './routes/catalog.js';
 import ordersRoutes from './routes/orders.js';
 
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3333;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads', 'logos');

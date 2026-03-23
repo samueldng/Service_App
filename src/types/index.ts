@@ -115,6 +115,7 @@ export interface Order {
   total: number;
   paymentMethod?: string;
   warranty?: string;
+  orderNumber?: number;
   items?: OrderItem[];
   clientName?: string;
   equipmentName?: string;

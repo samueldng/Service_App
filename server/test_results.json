@@ -1,0 +1,16 @@
+{
+  "clientFound": true,
+  "createdSector": {
+    "id": "7715bf8d-cc5a-4dfd-80db-be479273ac79",
+    "client_id": "9848d663-9cad-4c02-a1fe-e1fae949474a",
+    "name": "Script Sector",
+    "description": "Test",
+    "created_at": "2026-03-23T15:15:53.052Z"
+  },
+  "eqStatus": 201,
+  "eqBody": "{\"id\":\"7a5438a0-2a7f-48f9-92ad-c8e291910fc5\",\"client_id\":\"9848d663-9cad-4c02-a1fe-e1fae949474a\",\"sector_id\":\"7715bf8d-cc5a-4dfd-80db-be479273ac79\",\"qr_code_uid\":\"7eba6d35-12e5-435e-b383-68ba3c3345dc\",\"name\":\"Test Eq\",\"brand\":\"LG\",\"model\":\"X\",\"serial_number\":\"123\",\"btus\":null,\"details\":null,\"install_date\":null,\"status\":\"active\",\"created_at\":\"2026-03-23T15:15:53.061Z\"}",
+  "eqNoClientStatus": 400,
+  "eqNoClientBody": "{\"error\":\"Campos obrigatórios: client_id, name, brand, model\"}",
+  "delSectorStatus": 200,
+  "delSectorBody": "{\"success\":true}"
+}

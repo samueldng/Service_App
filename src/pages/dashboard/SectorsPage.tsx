@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Edit2, Trash2, X, MapPin, ChevronRight } from 'lucide-react';
 import { sectorsApi, clientsApi } from '../../services/api';
 import type { Sector, Client } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function SectorsPage() {
     const [sectors, setSectors] = useState<Sector[]>([]);
@@ -33,9 +32,8 @@ export default function SectorsPage() {
             const updated = await sectorsApi.update(editing.id, { ...form });
             setSectors(prev => prev.map(s => s.id === editing.id ? updated : s));
         } else {
-            const newSector: Sector = { id: `sec-${uuidv4().slice(0, 8)}`, ...form, createdAt: new Date().toISOString().split('T')[0] };
-            await sectorsApi.create(newSector);
-            setSectors(prev => [...prev, newSector]);
+            const created = await sectorsApi.create(form);
+            setSectors(prev => [...prev, created]);
         }
         setShowModal(false);
     };

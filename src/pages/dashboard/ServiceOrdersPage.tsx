@@ -27,14 +27,6 @@ export default function ServiceOrdersPage() {
     const [techniciansList, setTechniciansList] = useState<TechnicianOption[]>([]);
     const [form, setForm] = useState<{ clientId: string, equipmentId: string, type: ServiceOrder['type'], description: string, technicianId: string, warrantyUntil: string }>({ clientId: '', equipmentId: '', type: 'preventiva', description: '', technicianId: '', warrantyUntil: '' });
 
-    useEffect(() => {
-        serviceOrdersApi.getAll().then(setOrders);
-        equipmentsApi.getAll().then(setEquipments);
-        clientsApi.getAll().then(setClients);
-        organizationsApi.get().then(setOrganization);
-        loadTechnicians();
-    }, []);
-
     const loadTechnicians = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api';
@@ -54,6 +46,14 @@ export default function ServiceOrdersPage() {
             console.error('Failed to load technicians:', err);
         }
     };
+
+    useEffect(() => {
+        serviceOrdersApi.getAll().then(setOrders);
+        equipmentsApi.getAll().then(setEquipments);
+        clientsApi.getAll().then(setClients);
+        organizationsApi.get().then(setOrganization);
+        loadTechnicians();
+    }, []);
 
     const getEquipment = (id: string) => equipments.find(e => e.id === id);
 

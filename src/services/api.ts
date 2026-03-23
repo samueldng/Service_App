@@ -133,6 +133,7 @@ function mapOrderFromDb(d: any): Order {
         discount: parseFloat(d.discount) || 0, deliveryFee: parseFloat(d.delivery_fee) || 0,
         total: parseFloat(d.total) || 0, paymentMethod: d.payment_method,
         warranty: d.warranty, createdAt: d.created_at,
+        orderNumber: d.order_number,
         clientName: d.client_name, equipmentName: d.equipment_name,
         items: d.items ? d.items.map(mapOrderItemFromDb) : undefined,
         // Extra fields from detail JOIN (passed through for PDF)

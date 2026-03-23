@@ -169,6 +169,12 @@ export default function ClientsPage() {
             setForm(p => ({ ...p, uf: '', city: '' }));
             setCityQuery('');
             setAllCities([]);
+        } else {
+            // Auto-select exact match if the user typed it fully (e.g. "MA")
+            if (form.uf !== exactMatch.sigla) {
+                setForm(p => ({ ...p, uf: exactMatch.sigla, city: '' }));
+                setCityQuery('');
+            }
         }
     };
 
@@ -344,8 +350,8 @@ export default function ClientsPage() {
                                             value={cityQuery}
                                             onChange={e => handleCityInput(e.target.value)}
                                             onFocus={() => { if (allCities.length > 0) { setCitySuggestions(filterCities(allCities, cityQuery).slice(0, 15)); setShowCityDropdown(true); } }}
-                                            placeholder={!form.uf ? 'Selecione UF primeiro' : loadingCities ? 'Carregando...' : 'Digite a cidade...'}
-                                            disabled={!form.uf || loadingCities}
+                                            placeholder={!form.uf ? 'Selecione UF primeiro' : loadingCities ? 'Carregando cidades...' : 'Digite a cidade...'}
+                                            disabled={!form.uf}
                                             autoComplete="off"
                                         />
                                         {showCityDropdown && citySuggestions.length > 0 && (

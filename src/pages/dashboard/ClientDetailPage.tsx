@@ -398,8 +398,8 @@ export default function ClientDetailPage() {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(255, 255, 255);
-            const orderNumber = fullOrder.order_number || fullOrder.id?.substring(0, 4) || '001';
-            const year = new Date(fullOrder.created_at || new Date()).getFullYear();
+            const orderNumber = fullOrder.orderNumber || fullOrder.order_number || fullOrder.id?.substring(0, 4) || '001';
+            const year = new Date(fullOrder.createdAt || fullOrder.created_at || new Date()).getFullYear();
             doc.text(`Or\u00e7amento ${String(orderNumber).padStart(3, '0')}-${year}`, margin + 5, y + 7);
             y += 16;
 
@@ -411,7 +411,7 @@ export default function ClientDetailPage() {
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(dark.r, dark.g, dark.b);
             doc.setFontSize(10);
-            doc.text(fullOrder.client_name || fullOrder.clientName || client?.name || '', margin + 22, y);
+            doc.text(fullOrder.clientName || fullOrder.client_name || client?.name || '', margin + 22, y);
             y += 8;
 
             // Table helpers
@@ -551,8 +551,8 @@ export default function ClientDetailPage() {
                 const discAmt = (servicesTotal + materialsTotal) * (fullOrder.discount / 100);
                 drawTotalRow(`Desconto (${fullOrder.discount}%)`, `- ${formatCurrency(discAmt)}`);
             }
-            if (fullOrder.delivery_fee > 0 || fullOrder.deliveryFee > 0) {
-                drawTotalRow('Taxa de Entrega', formatCurrency(fullOrder.deliveryFee || fullOrder.delivery_fee));
+            if (fullOrder.deliveryFee > 0 || fullOrder.delivery_fee > 0) {
+                drawTotalRow('Taxa de Entrega', formatCurrency(fullOrder.deliveryFee || fullOrder.delivery_fee || 0));
             }
             drawTotalRow('Total', formatCurrency(fullOrder.total), true, true);
 
