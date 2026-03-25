@@ -152,13 +152,11 @@ def print_summary(results: List[dict]):
     
     print()
     
-    failed_required_count = sum(1 for r in results if not r["passed"] and not r.get("skipped") and r["name"] in ["Security Scan", "Lint Check"])
-
-    if failed_required_count > 0:
-        print_error(f"{failed_required_count} critical check(s) FAILED - Please fix before proceeding")
+    if failed_count > 0:
+        print_error(f"{failed_count} check(s) FAILED - Please fix before proceeding")
         return False
     else:
-        print_success("All critical checks PASSED ✨ (some optional checks may have failed)")
+        print_success("All checks PASSED ✨")
         return True
 
 def main():

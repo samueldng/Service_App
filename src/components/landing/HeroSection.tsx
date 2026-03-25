@@ -1,53 +1,110 @@
+import { useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './HeroSection.css';
 
+// QR Code pattern — 1 = filled pixel, 0 = empty
+const QR_PATTERN = [
+    [1,1,1,1,1,1,1,0,1,1,0,1,0,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,0,0,1,0,1,0,1,1,1,0,1],
+    [1,0,1,1,1,0,1,0,0,1,1,0,0,1,0,1,1,1,0,1],
+    [1,0,1,1,1,0,1,0,1,1,0,1,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,1,1,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0],
+    [1,0,1,0,1,1,1,1,0,0,1,1,1,0,1,1,1,0,1,0],
+    [1,1,0,1,0,0,1,0,1,0,0,0,1,1,0,0,1,1,0,1],
+    [0,1,1,1,1,0,0,1,0,1,1,1,0,0,0,1,0,1,1,0],
+    [1,0,0,1,0,1,1,1,1,0,0,1,0,1,1,1,1,0,0,1],
+    [0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,1,1,0],
+    [1,1,1,1,1,1,1,0,1,1,0,0,0,1,0,1,0,0,1,1],
+    [1,0,0,0,0,0,1,0,0,1,1,1,1,0,1,1,1,1,0,0],
+    [1,0,1,1,1,0,1,0,1,0,0,0,1,0,0,0,0,1,0,1],
+    [1,0,1,1,1,0,1,0,0,0,1,1,0,1,1,1,0,1,1,1],
+    [1,0,1,1,1,0,1,0,1,1,0,0,0,0,0,0,1,0,0,1],
+    [1,0,0,0,0,0,1,0,1,0,0,1,1,1,0,0,1,1,0,0],
+    [1,1,1,1,1,1,1,0,0,1,1,1,0,1,1,1,0,0,1,1],
+];
+
+const GRID_SIZE = QR_PATTERN.length;
+
 export default function HeroSection() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const drawQR = () => {
+            const dpr = Math.min(window.devicePixelRatio, 2);
+            const rect = canvas.parentElement?.getBoundingClientRect();
+            if (!rect) return;
+
+            // Canvas covers the full container
+            const w = rect.width;
+            const h = rect.height;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${h}px`;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Center the QR grid in the canvas
+            const cellSize = Math.min(w, h) * 0.018;
+            const gap = cellSize * 0.25;
+            const totalSize = GRID_SIZE * (cellSize + gap);
+            const offsetX = (w - totalSize) / 2;
+            const offsetY = (h - totalSize) / 2;
+
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (QR_PATTERN[row][col] === 1) {
+                        const x = offsetX + col * (cellSize + gap);
+                        const y = offsetY + row * (cellSize + gap);
+
+                        // Subtle gradient from cyan to emerald
+                        const t = (row + col) / (GRID_SIZE * 2);
+                        const r = Math.round(14 + t * 38);
+                        const g = Math.round(165 + t * 46);
+                        const b = Math.round(233 - t * 134);
+
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                    }
+                }
+            }
+        };
+
+        drawQR();
+
+        const handleResize = () => drawQR();
+        window.addEventListener('resize', handleResize);
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
-        <section className="hero">
+        <section className="hero" id="hero">
+            {/* Background ambient effects */}
             <div className="hero__bg-effects">
                 <div className="hero__grid-pattern" />
                 <div className="hero__glow hero__glow--1" />
                 <div className="hero__glow hero__glow--2" />
             </div>
 
+            {/* QR Code canvas + scanner overlay */}
             <div className="hero__qr-visual" aria-hidden="true">
-                <svg viewBox="0 0 210 210" className="hero__qr-svg" fill="none">
-                    {/* QR-style decorative pattern — pure CSS animated SVG */}
-                    <defs>
-                        <linearGradient id="qr-grad" x1="0" y1="0" x2="210" y2="210" gradientUnits="userSpaceOnUse">
-                            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.6" />
-                            <stop offset="100%" stopColor="#34d399" stopOpacity="0.3" />
-                        </linearGradient>
-                    </defs>
-                    {/* Corner markers */}
-                    <rect x="10" y="10" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block" />
-                    <rect x="20" y="20" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay1" />
-                    <rect x="140" y="10" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block hero__qr-block--delay2" />
-                    <rect x="150" y="20" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay3" />
-                    <rect x="10" y="140" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block hero__qr-block--delay4" />
-                    <rect x="20" y="150" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay1" />
-                    {/* Data dots */}
-                    {[85, 95, 105, 115, 125].map((x) =>
-                        [85, 95, 105, 115, 125].map((y) => (
-                            <rect
-                                key={`${x}-${y}`}
-                                x={x}
-                                y={y}
-                                width="8"
-                                height="8"
-                                rx="1"
-                                fill="url(#qr-grad)"
-                                className="hero__qr-dot"
-                                style={{ animationDelay: `${(x + y) * 0.005}s` }}
-                            />
-                        ))
-                    )}
-                    {/* Scan line */}
-                    <line x1="0" y1="0" x2="210" y2="0" stroke="#0ea5e9" strokeWidth="2" strokeOpacity="0.5" className="hero__scan-line" />
-                </svg>
+                <canvas ref={canvasRef} className="hero__qr-canvas" />
+                <div className="hero__scanner-line" />
             </div>
 
+            {/* Main content */}
             <div className="hero__content">
                 <div className="hero__badge hero__fade-in">
                     <Sparkles size={14} />

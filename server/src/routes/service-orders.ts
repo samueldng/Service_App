@@ -163,4 +163,31 @@ router.patch('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
     }
 });
 
+// DELETE /api/service-orders/:id — delete service order
+router.delete('/:id', authMiddleware, subscriptionGuard, async (req, res) => {
+    try {
+        const result = await query(
+            `DELETE FROM service_orders
+       WHERE id = $1
+       AND equipment_id IN (
+         SELECT e.id FROM equipments e
+         JOIN clients c ON e.client_id = c.id
+         WHERE c.org_id = $2
+       )
+       RETURNING id`,
+            [req.params.id, req.user!.orgId]
+        );
+
+        if (result.rows.length === 0) {
+            res.status(404).json({ error: 'Ordem de serviço não encontrada' });
+            return;
+        }
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Delete service order error:', error);
+        res.status(500).json({ error: 'Erro ao deletar ordem de serviço' });
+    }
+});
+
 export default router;

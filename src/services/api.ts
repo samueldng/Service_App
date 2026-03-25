@@ -437,6 +437,10 @@ export const serviceOrdersApi = {
         });
         return mapServiceOrderFromDb(data) as ServiceOrder;
     },
+
+    delete: async (id: string) => {
+        await apiFetch(`/service-orders/${id}`, { method: 'DELETE' });
+    },
 };
 
 // ---- Catalog API ----
