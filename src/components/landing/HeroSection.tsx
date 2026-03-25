@@ -1,118 +1,81 @@
-import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './HeroSection.css';
-
-const QR_PATTERN = [
-    [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-    [1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1],
-    [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-    [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1],
-];
 
 export default function HeroSection() {
     return (
         <section className="hero">
             <div className="hero__bg-effects">
-                <div className="hero__orb hero__orb--1" />
-                <div className="hero__orb hero__orb--2" />
-                <div className="hero__orb hero__orb--3" />
+                <div className="hero__grid-pattern" />
+                <div className="hero__glow hero__glow--1" />
+                <div className="hero__glow hero__glow--2" />
             </div>
 
-            <div className="hero__canvas-wrapper">
-                <div className="qr-grid-scene">
-                    <div className="qr-grid-css">
-                        {QR_PATTERN.map((row, r) =>
-                            row.map((val, c) => (
-                                <div
-                                    key={`${r}-${c}`}
-                                    className="qr-grid-css__cell"
-                                >
-                                    {val === 1 && (
-                                        <div 
-                                            className="qr-grid-css__dot"
-                                            style={{
-                                                animationDelay: `${((r + c) * 0.05) % 3}s`
-                                            }}
-                                        />
-                                    )}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
+            <div className="hero__qr-visual" aria-hidden="true">
+                <svg viewBox="0 0 210 210" className="hero__qr-svg" fill="none">
+                    {/* QR-style decorative pattern — pure CSS animated SVG */}
+                    <defs>
+                        <linearGradient id="qr-grad" x1="0" y1="0" x2="210" y2="210" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.6" />
+                            <stop offset="100%" stopColor="#34d399" stopOpacity="0.3" />
+                        </linearGradient>
+                    </defs>
+                    {/* Corner markers */}
+                    <rect x="10" y="10" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block" />
+                    <rect x="20" y="20" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay1" />
+                    <rect x="140" y="10" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block hero__qr-block--delay2" />
+                    <rect x="150" y="20" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay3" />
+                    <rect x="10" y="140" width="60" height="60" rx="4" stroke="url(#qr-grad)" strokeWidth="3" fill="none" className="hero__qr-block hero__qr-block--delay4" />
+                    <rect x="20" y="150" width="40" height="40" rx="2" fill="url(#qr-grad)" className="hero__qr-block hero__qr-block--delay1" />
+                    {/* Data dots */}
+                    {[85, 95, 105, 115, 125].map((x) =>
+                        [85, 95, 105, 115, 125].map((y) => (
+                            <rect
+                                key={`${x}-${y}`}
+                                x={x}
+                                y={y}
+                                width="8"
+                                height="8"
+                                rx="1"
+                                fill="url(#qr-grad)"
+                                className="hero__qr-dot"
+                                style={{ animationDelay: `${(x + y) * 0.005}s` }}
+                            />
+                        ))
+                    )}
+                    {/* Scan line */}
+                    <line x1="0" y1="0" x2="210" y2="0" stroke="#0ea5e9" strokeWidth="2" strokeOpacity="0.5" className="hero__scan-line" />
+                </svg>
             </div>
 
             <div className="hero__content">
-                <motion.div
-                    className="hero__badge"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                >
+                <div className="hero__badge hero__fade-in">
                     <Sparkles size={14} />
                     <span>Plataforma de Gestão Inteligente</span>
-                </motion.div>
+                </div>
 
-                <motion.h1
-                    className="hero__title"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                >
+                <h1 className="hero__title hero__fade-in hero__fade-in--d1">
                     Controle total dos seus{' '}
-                    <span className="text-gradient">ativos</span> com{' '}
-                    <span className="text-gradient">QR Code</span>
-                </motion.h1>
+                    <span className="hero__gradient-text">ativos</span> com{' '}
+                    <span className="hero__gradient-text">QR Code</span>
+                </h1>
 
-                <motion.p
-                    className="hero__subtitle"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
-                >
+                <p className="hero__subtitle hero__fade-in hero__fade-in--d2">
                     Gere QR Codes únicos para cada equipamento, registre manutenções em tempo real
                     e ofereça transparência total aos seus clientes.
-                </motion.p>
+                </p>
 
-                <motion.div
-                    className="hero__actions"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.8 }}
-                >
-                    <Link to="/register" className="btn btn-primary btn-lg">
+                <div className="hero__actions hero__fade-in hero__fade-in--d3">
+                    <Link to="/register" className="hero__cta-primary">
                         Começar Agora
                         <ArrowRight size={18} />
                     </Link>
-                    <a href="#features" className="btn btn-secondary btn-lg">
+                    <a href="#features" className="hero__cta-secondary">
                         Ver Recursos
                     </a>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    className="hero__stats"
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 1.0 }}
-                >
+                <div className="hero__stats hero__fade-in hero__fade-in--d4">
                     <div className="hero__stat">
                         <span className="hero__stat-value">2.500+</span>
                         <span className="hero__stat-label">Equipamentos</span>
@@ -127,7 +90,7 @@ export default function HeroSection() {
                         <span className="hero__stat-value">15k+</span>
                         <span className="hero__stat-label">OS Registradas</span>
                     </div>
-                </motion.div>
+                </div>
             </div>
         </section>
     );

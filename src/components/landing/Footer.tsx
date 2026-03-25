@@ -1,5 +1,4 @@
 import { QrCode, Github, Linkedin, Instagram } from 'lucide-react';
-
 import './Footer.css';
 
 export default function Footer() {
@@ -9,11 +8,11 @@ export default function Footer() {
                 <div className="footer__grid">
                     <div className="footer__brand">
                         <div className="footer__logo">
-                            <div className="navbar__logo-icon">
-                                <QrCode size={20} />
+                            <div className="navbar__logo-icon" style={{ width: 32, height: 32 }}>
+                                <QrCode size={16} />
                             </div>
-                            <span className="navbar__logo-text">
-                                Maint<span className="text-gradient">QR</span>
+                            <span className="navbar__logo-text" style={{ fontSize: '1rem' }}>
+                                Maint<span className="hero__gradient-text">QR</span>
                             </span>
                         </div>
                         <p className="footer__desc">
@@ -21,9 +20,9 @@ export default function Footer() {
                             Transparência e controle para prestadores e clientes.
                         </p>
                         <div className="footer__social">
-                            <a href="#" className="footer__social-link"><Instagram size={18} /></a>
-                            <a href="#" className="footer__social-link"><Linkedin size={18} /></a>
-                            <a href="#" className="footer__social-link"><Github size={18} /></a>
+                            <a href="#" className="footer__social-link" aria-label="Instagram"><Instagram size={18} /></a>
+                            <a href="#" className="footer__social-link" aria-label="LinkedIn"><Linkedin size={18} /></a>
+                            <a href="#" className="footer__social-link" aria-label="GitHub"><Github size={18} /></a>
                         </div>
                     </div>
 
@@ -53,7 +52,7 @@ export default function Footer() {
 
                 <div className="footer__bottom">
                     <p>&copy; 2026 MaintQR. Todos os direitos reservados.</p>
-                    <p>Desenvolvido por <a href="https://logistack.online" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 'bold' }}>LogiStack BR</a></p>
+                    <p>Desenvolvido por <a href="https://logistack.online" target="_blank" rel="noopener noreferrer" className="footer__dev-link">LogiStack BR</a></p>
                 </div>
             </div>
         </footer>

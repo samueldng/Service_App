@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { QrCode, Menu, X } from 'lucide-react';
 import './Navbar.css';
 
@@ -10,7 +9,7 @@ export default function Navbar() {
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 50);
-        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -20,80 +19,73 @@ export default function Navbar() {
         { label: 'Planos', href: '#pricing' },
     ];
 
-    const handleMobileNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault();
         setMobileOpen(false);
-        // Small delay to let the menu close before scrolling
-        setTimeout(() => {
-            const targetId = href.replace('#', '');
-            const element = document.getElementById(targetId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
+        const targetId = href.replace('#', '');
+        const element = document.getElementById(targetId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     return (
-        <motion.nav
-            className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-        >
+        <nav className={`navbar ${scrolled ? 'navbar--scrolled' : ''}`}>
             <div className="navbar__inner">
                 <Link to="/" className="navbar__logo">
                     <div className="navbar__logo-icon">
                         <QrCode size={24} />
                     </div>
                     <span className="navbar__logo-text">
-                        Maint<span className="text-gradient">QR</span>
+                        Maint<span className="hero__gradient-text">QR</span>
                     </span>
                 </Link>
 
                 <div className="navbar__links">
                     {navLinks.map((link) => (
-                        <a key={link.href} href={link.href} className="navbar__link">
+                        <a
+                            key={link.href}
+                            href={link.href}
+                            className="navbar__link"
+                            onClick={(e) => handleNavClick(e, link.href)}
+                        >
                             {link.label}
                         </a>
                     ))}
                 </div>
 
                 <div className="navbar__actions">
-                    <Link to="/login" className="btn btn-ghost">Entrar</Link>
-                    <Link to="/register" className="btn btn-primary">Começar Grátis</Link>
+                    <Link to="/login" className="navbar__login-btn">Entrar</Link>
+                    <Link to="/register" className="hero__cta-primary" style={{ padding: '0.625rem 1.5rem', fontSize: '0.875rem' }}>
+                        Começar Grátis
+                    </Link>
                 </div>
 
-                <button className="navbar__mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
+                <button
+                    className="navbar__mobile-toggle"
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
+                >
                     {mobileOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
 
-            <AnimatePresence>
-                {mobileOpen && (
-                    <motion.div
-                        className="navbar__mobile-menu"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
+            <div className={`navbar__mobile-menu ${mobileOpen ? 'navbar__mobile-menu--open' : ''}`}>
+                {navLinks.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        className="navbar__mobile-link"
+                        onClick={(e) => handleNavClick(e, link.href)}
                     >
-                        {navLinks.map((link) => (
-                            <a
-                                key={link.href}
-                                href={link.href}
-                                className="navbar__mobile-link"
-                                onClick={(e) => handleMobileNavClick(e, link.href)}
-                            >
-                                {link.label}
-                            </a>
-                        ))}
-                        <div className="navbar__mobile-actions">
-                            <Link to="/login" className="navbar__mobile-login-btn" onClick={() => setMobileOpen(false)}>Entrar</Link>
-                            <Link to="/register" className="btn btn-primary" style={{ width: '100%' }} onClick={() => setMobileOpen(false)}>Começar Grátis</Link>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.nav>
+                        {link.label}
+                    </a>
+                ))}
+                <div className="navbar__mobile-actions">
+                    <Link to="/login" className="navbar__mobile-login-btn" onClick={() => setMobileOpen(false)}>Entrar</Link>
+                    <Link to="/register" className="hero__cta-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setMobileOpen(false)}>Começar Grátis</Link>
+                </div>
+            </div>
+        </nav>
     );
 }

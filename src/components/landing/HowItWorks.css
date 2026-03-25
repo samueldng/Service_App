@@ -1,5 +1,5 @@
 .how-it-works {
-    background: var(--color-bg-secondary);
+    background: #0c1222;
 }
 
 .how-it-works__header {
@@ -7,40 +7,63 @@
     margin-bottom: var(--space-16);
 }
 
-.how-it-works__title {
-    font-size: var(--text-4xl);
-    font-weight: 800;
-    margin-top: var(--space-4);
+.how-it-works__badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-4);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    border-radius: 2px;
     margin-bottom: var(--space-4);
+}
+
+.how-it-works__title {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 800;
+    margin-bottom: var(--space-4);
+    letter-spacing: -0.02em;
 }
 
 .how-it-works__subtitle {
     font-size: var(--text-lg);
-    color: var(--color-text-secondary);
+    color: #94a3b8;
 }
 
 .how-it-works__steps {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-6);
+    gap: var(--space-5);
     position: relative;
 }
 
+/* ---- Step Card ---- */
 .how-step {
     position: relative;
     text-align: center;
     padding: var(--space-8) var(--space-4);
+    opacity: 0;
+    transform: translateY(24px);
+    transition: all 0.5s ease-out;
+}
+
+.how-step--visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .how-step__number {
     font-family: var(--font-heading);
     font-size: var(--text-5xl);
     font-weight: 800;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, #0ea5e9, #34d399);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    opacity: 0.2;
+    opacity: 0.15;
     position: absolute;
     top: 0;
     right: var(--space-4);
@@ -52,10 +75,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(99, 102, 241, 0.1);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: var(--radius-xl);
-    color: var(--color-accent-primary);
+    background: rgba(14, 165, 233, 0.06);
+    border: 1px solid rgba(14, 165, 233, 0.12);
+    border-radius: 4px;
+    color: #0ea5e9;
     margin: 0 auto var(--space-5);
 }
 
@@ -63,11 +86,12 @@
     font-size: var(--text-xl);
     font-weight: 700;
     margin-bottom: var(--space-3);
+    color: #f1f5f9;
 }
 
 .how-step__desc {
     font-size: var(--text-sm);
-    color: var(--color-text-secondary);
+    color: #94a3b8;
     line-height: 1.7;
 }
 
@@ -82,9 +106,8 @@
         top: 50%;
         right: -12%;
         width: 24%;
-        height: 2px;
-        background: linear-gradient(90deg, var(--color-accent-primary), transparent);
-        opacity: 0.3;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(14, 165, 233, 0.3), transparent);
     }
 }
 
@@ -101,5 +124,18 @@
 @media (max-width: 640px) {
     .how-it-works__steps {
         grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    .how-step {
+        padding: var(--space-6) var(--space-4);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .how-step {
+        opacity: 1;
+        transform: none;
+        transition: none;
     }
 }

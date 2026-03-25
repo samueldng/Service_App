@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { useRef, useEffect } from 'react';
 import { Check, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './PricingSection.css';
@@ -60,38 +60,55 @@ const plans = [
 ];
 
 export default function PricingSection() {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const headerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const cards = containerRef.current?.querySelectorAll('.pricing-card');
+        const header = headerRef.current;
+        if (!cards && !header) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('pricing-card--visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            { threshold: 0.15 }
+        );
+
+        if (header) observer.observe(header);
+        cards?.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
+    }, []);
+
     return (
-        <section id="pricing" className="pricing section-padding mesh-bg">
+        <section id="pricing" className="pricing section-padding">
             <div className="container">
-                <motion.div
-                    className="pricing__header"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <span className="badge badge-success">Planos</span>
+                <div ref={headerRef} className="pricing__header pricing-card">
+                    <span className="pricing__badge">Planos</span>
                     <h2 className="pricing__title">
-                        Escolha o plano <span className="text-gradient">ideal</span>
+                        Escolha o plano <span className="hero__gradient-text">ideal</span>
                     </h2>
                     <p className="pricing__subtitle">
                         Comece grátis por 7 dias. Sem cartão de crédito.
                     </p>
-                </motion.div>
+                </div>
 
-                <div className="pricing__grid">
+                <div ref={containerRef} className="pricing__grid">
                     {plans.map((plan, i) => (
-                        <motion.div
+                        <div
                             key={plan.name}
-                            className={`pricing-card glass-card ${plan.popular ? 'pricing-card--popular' : ''}`}
-                            initial={{ opacity: 0, y: 40 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6, delay: i * 0.15 }}
+                            className={`pricing-card ${plan.popular ? 'pricing-card--popular' : ''}`}
+                            style={{ transitionDelay: `${i * 0.12}s` }}
                         >
                             {plan.popular && (
-                                <div className="pricing-card__badge">
-                                    <Zap size={14} />
+                                <div className="pricing-card__badge-tag">
+                                    <Zap size={12} />
                                     Mais Popular
                                 </div>
                             )}
@@ -113,12 +130,11 @@ export default function PricingSection() {
                             </ul>
                             <Link
                                 to={`/register?plan=${plan.planId}`}
-                                className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} btn-lg`}
-                                style={{ width: '100%' }}
+                                className={plan.popular ? 'hero__cta-primary pricing-card__cta' : 'pricing-card__cta-outline'}
                             >
                                 {plan.cta}
                             </Link>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
             </div>

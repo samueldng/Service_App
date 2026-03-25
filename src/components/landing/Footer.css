@@ -1,6 +1,6 @@
 .footer {
-    background: var(--color-bg-secondary);
-    border-top: 1px solid var(--color-border);
+    background: #060a14;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
     padding: var(--space-16) var(--space-6) var(--space-8);
 }
 
@@ -20,7 +20,7 @@
 
 .footer__desc {
     font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
+    color: #64748b;
     line-height: 1.7;
     margin-bottom: var(--space-6);
     max-width: 320px;
@@ -32,22 +32,22 @@
 }
 
 .footer__social-link {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--color-bg-glass);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    color: var(--color-text-tertiary);
-    transition: all var(--transition-fast);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    color: #64748b;
+    transition: all 0.15s ease;
 }
 
 .footer__social-link:hover {
-    color: var(--color-accent-primary);
-    border-color: var(--color-accent-primary);
-    background: rgba(99, 102, 241, 0.1);
+    color: #0ea5e9;
+    border-color: rgba(14, 165, 233, 0.3);
+    background: rgba(14, 165, 233, 0.06);
 }
 
 .footer__col {
@@ -60,19 +60,22 @@
     font-family: var(--font-heading);
     font-size: var(--text-sm);
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: #f1f5f9;
     margin-bottom: var(--space-2);
 }
 
 .footer__link {
     font-size: var(--text-sm);
-    color: var(--color-text-tertiary);
-    transition: color var(--transition-fast);
+    color: #64748b;
+    transition: color 0.15s ease;
     text-decoration: none;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
 }
 
 .footer__link:hover {
-    color: var(--color-text-primary);
+    color: #f1f5f9;
 }
 
 .footer__bottom {
@@ -80,9 +83,20 @@
     align-items: center;
     justify-content: space-between;
     padding-top: var(--space-8);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
     font-size: var(--text-sm);
-    color: var(--color-text-muted);
+    color: #475569;
+}
+
+.footer__dev-link {
+    color: #0ea5e9;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+
+.footer__dev-link:hover {
+    color: #38bdf8;
 }
 
 @media (max-width: 768px) {

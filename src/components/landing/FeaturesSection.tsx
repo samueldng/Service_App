@@ -1,9 +1,7 @@
 import { useRef, useEffect } from 'react';
-import { motion, useInView } from 'framer-motion';
 import { QrCode, ClipboardList, Shield, History, Smartphone, Bell } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import './FeaturesSection.css';
-import gsap from 'gsap';
 
 type Feature = {
     icon: LucideIcon;
@@ -17,88 +15,111 @@ const features: Feature[] = [
         icon: QrCode,
         title: 'QR Code Inteligente',
         description: 'Gere códigos únicos para cada equipamento. Escaneie, identifique e acesse o histórico completo instantaneamente.',
-        color: '#6366f1',
+        color: '#0ea5e9',
     },
     {
         icon: ClipboardList,
         title: 'Ordens de Serviço',
         description: 'Crie e gerencie OS com fotos, descrições detalhadas e acompanhamento de status em tempo real.',
-        color: '#8b5cf6',
+        color: '#34d399',
     },
     {
         icon: History,
         title: 'Histórico Completo',
         description: 'Timeline detalhada de todas as intervenções, preventivas e corretivas, para cada ativo.',
-        color: '#22d3ee',
+        color: '#38bdf8',
     },
     {
         icon: Shield,
         title: 'Controle de Garantia',
         description: 'Alertas visuais automáticos quando o equipamento ainda está dentro do período de garantia.',
-        color: '#34d399',
+        color: '#f59e0b',
     },
     {
         icon: Smartphone,
         title: 'Portal do Cliente',
         description: 'Seus clientes acompanham tudo pelo celular. Transparência total com um simples scan.',
-        color: '#fbbf24',
+        color: '#ef4444',
     },
     {
         icon: Bell,
         title: 'Alertas Inteligentes',
         description: 'Notificações de manutenção preventiva, vencimento de garantia e solicitações de reparo.',
-        color: '#fb7185',
+        color: '#a855f7',
     },
 ];
 
 function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
     const ref = useRef<HTMLDivElement>(null);
-    const isInView = useInView(ref, { once: true, margin: '-100px' });
 
     useEffect(() => {
-        if (isInView && ref.current) {
-            gsap.fromTo(ref.current,
-                { y: 60, opacity: 0, scale: 0.95 },
-                { y: 0, opacity: 1, scale: 1, duration: 0.7, delay: index * 0.1, ease: 'power3.out' }
-            );
-        }
-    }, [isInView, index]);
+        const el = ref.current;
+        if (!el) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    el.style.transitionDelay = `${index * 0.08}s`;
+                    el.classList.add('feature-card--visible');
+                    observer.unobserve(el);
+                }
+            },
+            { threshold: 0.15 }
+        );
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [index]);
 
     const Icon = feature.icon;
 
     return (
-        <div ref={ref} className="feature-card glass-card" style={{ opacity: 0 }}>
-            <div className="feature-card__icon" style={{ background: `${feature.color}15`, color: feature.color }}>
+        <div ref={ref} className="feature-card">
+            <div className="feature-card__icon" style={{ background: `${feature.color}12`, color: feature.color }}>
                 <Icon size={24} />
             </div>
             <h3 className="feature-card__title">{feature.title}</h3>
             <p className="feature-card__desc">{feature.description}</p>
-            <div className="feature-card__glow" style={{ background: `radial-gradient(circle, ${feature.color}10, transparent)` }} />
+            <div className="feature-card__accent" style={{ background: feature.color }} />
         </div>
     );
 }
 
 export default function FeaturesSection() {
+    const headerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const el = headerRef.current;
+        if (!el) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    el.classList.add('features__header--visible');
+                    observer.unobserve(el);
+                }
+            },
+            { threshold: 0.2 }
+        );
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
     return (
-        <section id="features" className="features section-padding mesh-bg">
+        <section id="features" className="features section-padding">
             <div className="container">
-                <motion.div
-                    className="features__header"
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <span className="features__badge badge badge-primary">Recursos</span>
+                <div ref={headerRef} className="features__header">
+                    <span className="features__badge">Recursos</span>
                     <h2 className="features__title">
                         Tudo que você precisa para{' '}
-                        <span className="text-gradient">gerenciar seus ativos</span>
+                        <span className="hero__gradient-text">gerenciar seus ativos</span>
                     </h2>
                     <p className="features__subtitle">
                         Uma plataforma completa para prestadores de serviço que buscam
                         eficiência, organização e transparência.
                     </p>
-                </motion.div>
+                </div>
 
                 <div className="features__grid">
                     {features.map((feature, i) => (
